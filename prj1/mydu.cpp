@@ -11,31 +11,32 @@
 //steven guo
 //9/9/2020
 
-int depthfirstapply(char* path, int pathfun(char* path1, std::vector<char>* option));
+int depthfirstapply(char* path, int pathfun(char* path1, std::vector<char>* option), std::vector<char>* option, int scale, int depth, int ino, int math_depth);
 int sizepathfun(char* path, std::vector<char>* option);
-
+void printHuman(int size, char* pathname, std::vector<char>* option, int scale);
 
 int sizepathfun(char* path, std::vector<char>* option)
 {
 	struct stat fileStat;
-	if (stat(path, &fileStat) == -1)
+
+	if (lstat(path, &fileStat) == -1)//checks if fileStat can be accessed
 	{
 		perror("File error");
 		return -1;
 	}
-	if (S_ISREG(fileStat.st_mode) == 0)//checks if its a regular file
+	if (S_ISREG(fileStat.st_mode) == 0)//checks if fileStat a regular file
 	{
 		return -1;
 	}
 	else
 	{
 
-		if (std::find(option.begin(), option->end(), 'B') != option.end() || std::find(option.begin(), option->end(), 'b') != option.end() || std::find(option.begin(), option->end(), 'm') != option.end())
-		{
+		if (std::find(option.begin(), option.end(), 'B') != option.end() || std::find(option.begin(), option.end(), 'b') != option.end() || std::find(option.begin(), option.end(), 'm') != option.end())//when the arguments are B,b,m 
+		{//it returns it in bytes
 			return statbuf.st_size;
 		}
 		else
-		{
+		{//it returns it in blocks
 			return (statbuf.st_blocks / 2);
 		}
 	}
@@ -45,13 +46,13 @@ int sizepathfun(char* path, std::vector<char>* option)
 
 }
 
-int depthfirstapply(char* path, int pathfun(char* path1, std::vector<int>* option))
+int depthfirstapply(char* path, int pathfun(char* path1, std::vector<int>* option), std::vector<int>* option, int scale, int depth, int max_depth)
 {
-
+	struct stat info;
 	struct stat fileStat;
 	int totalSize = 0; //size
-	struct dirent* ent; //directory entry at the current position in directory stream
-	char* filePath;
+	struct dirent* ent; //to hold directory entry at the current position in directory stream
+	char* filePath;//holds filepath used to 
 	DIR* dir = opendir(path); //open directory
 
 	if (!dir)//unable to open directory
@@ -61,11 +62,133 @@ int depthfirstapply(char* path, int pathfun(char* path1, std::vector<int>* optio
 
 	while ((ent = readdir(dir)) != NULL)//traverses directory until dir is not a directory
 	{
-		filePath = ent->d_name; // current file path
+		char* pathname = ent->d_name; // current name of the path of the directory
+		char pathname[4096];//holds current pathname for directory
 
+		sprintf(filePath, "%s/%s", path, pathname);// save pathname
+		lstat(filePath, &info);// //gets the attributes of filepath
+		mode_t mode = info.st_mode; //gets the file type attribute of filepath
+		if (S_ISDIR(mode))//checks if mode is a directory
+		{
+			int size = depthfirstapply(pathname, pathfun, option, scale, depth + 1, max_depth);//gets size of directory and goes into directory
+			size += info.st_size;
+			if (size >= 0) // checks the size of directory
+			{
+				totalSize += size;//accumulate total size
+				if (std::find(option.begin(), option.end(), 's') != option.end()) != NULL)//if argument has s then it skips the printing
+				{
+					continue;
+				}
+				
+				if ((std::find(option.begin(), option.end(), 'H') != option.end()) || (std::find(option.begin(), option.end(), 'B') != option.end()) || (std::find(option.begin(), option.end(), 'm') != option.end()))//check if H,B,m is in arguments
+				{
+					printHuman(size, pathname, options, scale);//when H,B,m is in arguments go to printHuman for unit conversion
+				}
+				else if (std::find(option.begin(), option.end(), 'd') != option.end())//check if d is in argument
+				{
+					if (depth >= max_depth)//check if depth > max_depth
+					{
+						printHuman(size, pathname, options, scale);//print when max_depth is not below depth
+					}
+					else
+					{
+
+					}
+
+				}
+				else
+				{
+					printf("%-15s %d\n", pathname, size);
+				}
+			}
+
+		}
+		else
+		{
+			int size = pathfun(pathname, options, scale);//get size of files
+			if (size > 0)//adds file sizes
+			{
+				totalSize += size;
+			}
+			if (std::find(option.begin(), option.end(), 's') != option.end())//if arguemnt is s then skip printing
+			{
+				continue;
+			}
+			if (((std::find(option.begin(), option.end(), 'B') != option.end()) || (std::find(option.begin(), option.end(), 'm') != option.end())) && size < 1)//if B or m is in arguments make the size=1
+			{
+				size = 1;
+			}
+
+			if (std::find(option.begin(), option.end(), 'a') != option.end())//check if a is in arguments
+			{//prints out the files with directories from this point on
+				
+				
+				if ((std::find(option.begin(), option.end(), 'H') != option.end()) || (std::find(option.begin(), option.end(), 'B') != option.end()) || (std::find(option.begin(), option.end(), 'm') != option.end()))//check if H,B,m is in arguments
+				{
+					printHuman(size, pathname, options, scale);//when H,B,m is in arguments go to printHuman for unit conversion
+				}
+				else if (std::find(option.begin(), option.end(), 'd') != option.end())//check if d is in argument
+				{
+					if (depth >= max_depth)//check if depth > max_depth
+					{
+						printHuman(size, pathname, options, scale);//print when max_depth is not below depth
+					}
+					else
+					{
+
+					}
+
+				}
+				else
+				{
+					printf("%-15s %d\n", pathname, size);
+				}
+			}
+				
+		}
 	}
 	closedir(dir);//close directory
-	return count;//returns the size of the files in this directory(path)
+	return totalSize;//returns the size of the files in this directory(path)
+}
+
+void printHuman(int size, char* pathname, std::vector<char>* option, int scale)
+{
+	const char* unit = " ";
+	if (std::find(option.begin(), option.end(), 'H') != option.end()) != NULL) //checks if H is in arguments
+	{
+		if (size >= 1000000000)// convert to gigabyte if size is over that amount
+		{
+			size = (long long)(size / 1000000000);
+			unit = "G";
+		}
+		else if (size >= 1000000)// convert to megabyte if size is over that amount
+		{
+			size = (long long)(size / 1000000);
+			unit = "M";
+		}
+		else if (size >= 1000)// convert to kilabyte if size is over that amount
+		{
+			size = (long long)(size / 1000);
+			unit = "K";
+		}
+		printf("%s%-15d %s\n", pathname, size, unit );
+	}
+	if (strstr(options, "B") != NULL)//checks if B is in arguments
+	{
+		size = size / scale; //scales size by user input
+		if (size < 1)//round up
+		{
+			size = 1;
+		}
+		printf("%-15s %d\n", pathname, size);
+
+	}
+	if (strstr(options, "m") != NULL)//scale by megabyte
+	{
+		size = size / 1000000;
+		if (size < 1) size = 1;
+		printf("%s%-15d %s\n", pathname, size, "M");
+	}
 }
 
 int main(int argc, char* argv[])
