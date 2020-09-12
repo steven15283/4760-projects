@@ -50,7 +50,6 @@ int sizepathfun(char* path)
 int depthfirstapply(char* path, int pathfun(char* path1),  int scale, int depth, int max_depth)
 {
 	struct stat info;
-	struct stat fileStat;
 	int totalSize = 0; //size
 	struct dirent* ent; //to hold directory entry at the current position in directory stream
 	char* filePath;//holds filepath used to 
@@ -76,12 +75,12 @@ int depthfirstapply(char* path, int pathfun(char* path1),  int scale, int depth,
 			if (size >= 0) // checks the size of directory
 			{
 				totalSize += size;//accumulate total size
-				if (std::find(option.begin(), option.end(), 's') != option.end()) != NULL)//if argument has s then it skips the printing
+				if (std::find(option.begin(), option.end(), 's') != option.end())//if argument has s then it skips the printing
 				{
 					continue;
 				}
 				
-				if ((std::find(option.begin(), option.end(), 'H') != option.end()) || (std::find(option.begin(), option.end(), 'B') != option.end()) || (std::find(option.begin(), option.end(), 'm') != option.end()))//check if H,B,m is in arguments
+				if ((std::find(option.begin(), option.end(), 'H') != option.end()) || (std::find(option.begin(), option.end(), 'B') != option.end()) || (std::find(option.begin(), option.end(), 'm') != option.end())//check if H,B,m is in arguments
 				{
 					printHuman(size, pathname, options, scale);//when H,B,m is in arguments go to printHuman for unit conversion
 				}
@@ -115,9 +114,13 @@ int depthfirstapply(char* path, int pathfun(char* path1),  int scale, int depth,
 			{
 				continue;
 			}
-			if (((std::find(option.begin(), option.end(), 'B') != option.end()) || (std::find(option.begin(), option.end(), 'm') != option.end())) && size < 1)//if B or m is in arguments make the size=1
+			if ((std::find(option.begin(), option.end(), 'B') != option.end()) || (std::find(option.begin(), option.end(), 'm') != option.end())//if B or m is in arguments make the size=1 when size is less than 1
 			{
-				size = 1;
+				if (size < 1)
+				{
+					size = 1;
+				}
+				
 			}
 
 			if (std::find(option.begin(), option.end(), 'a') != option.end())//check if a is in arguments
@@ -155,7 +158,7 @@ int depthfirstapply(char* path, int pathfun(char* path1),  int scale, int depth,
 void printHuman(int size, char* pathname, int scale)
 {
 	char unit = ' ';
-	if (std::find(option.begin(), option.end(), 'H') != option.end()) != NULL) //checks if H is in arguments
+	if (std::find(option.begin(), option.end(), 'H') != option.end()) ) //checks if H is in arguments
 	{
 		if (size >= 1000000000)// convert to gigabyte if size is over that amount
 		{
@@ -174,7 +177,7 @@ void printHuman(int size, char* pathname, int scale)
 		}
 		printf("%s%-15d %c\n", pathname, size, unit );
 	}
-	if (std::find(option.begin(), option.end(), 'B') != option.end()) != NULL)//checks if B is in arguments
+	if (std::find(option.begin(), option.end(), 'B') != option.end()) )//checks if B is in arguments
 	{
 		size = size / scale; //scales size by user input
 		if (size < 1)//round up
@@ -184,7 +187,7 @@ void printHuman(int size, char* pathname, int scale)
 		printf("%-15s %d\n", pathname, size);
 
 	}
-	if (std::find(option.begin(), option.end(), 'm') != option.end()) != NULL)//scale by megabyte
+	if (std::find(option.begin(), option.end(), 'm') != option.end())//scale by megabyte
 	{
 		size = size / 1000000;
 		if (size < 1) size = 1;
