@@ -27,17 +27,6 @@ int sizepathfun(char* path, std::vector<char>* option)
 	{
 		return -1;
 	}
-	else
-	{
-		if (std::find(option.begin(), option.end(), 'B') != option.end() || std::find(option.begin(), option->end(), 'b') != option.end() || std::find(option.begin(), option->end(), 'm') != option.end())
-		{
-			return fileStat.st_size;
-		}
-		else
-		{
-			return (fileStat.st_blocks / 2);
-		}
-	}
 
 
 
@@ -124,11 +113,9 @@ int main(int argc, char* argv[])
 				option.push_back('d');
 				break;
 			default:
-				perror("invalid command line arguements");
 
 		}
 	}
 
-	
 
 }
