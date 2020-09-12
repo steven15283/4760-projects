@@ -11,11 +11,12 @@
 //steven guo
 //9/9/2020
 
-int depthfirstapply(char* path, int pathfun(char* path1, std::vector<char>* option), std::vector<char>* option, int scale, int depth, int ino, int math_depth);
-int sizepathfun(char* path, std::vector<char>* option);
-void printHuman(int size, char* pathname, std::vector<char>* option, int scale);
+int depthfirstapply(char* path, int pathfun(char* path1,), int scale, int depth, int ino, int math_depth);
+int sizepathfun(char* path);
+void printHuman(int size, char* pathname, int scale);
 
-int sizepathfun(char* path, std::vector<char>* option)
+static std::vector<int> option;
+int sizepathfun(char* path)
 {
 	struct stat fileStat;
 
@@ -46,7 +47,7 @@ int sizepathfun(char* path, std::vector<char>* option)
 
 }
 
-int depthfirstapply(char* path, int pathfun(char* path1, std::vector<int>* option), std::vector<int>* option, int scale, int depth, int max_depth)
+int depthfirstapply(char* path, int pathfun(char* path1),  int scale, int depth, int max_depth)
 {
 	struct stat info;
 	struct stat fileStat;
@@ -70,7 +71,7 @@ int depthfirstapply(char* path, int pathfun(char* path1, std::vector<int>* optio
 		mode_t mode = info.st_mode; //gets the file type attribute of filepath
 		if (S_ISDIR(mode))//checks if mode is a directory
 		{
-			int size = depthfirstapply(pathname, pathfun, option, scale, depth + 1, max_depth);//gets size of directory and goes into directory
+			int size = depthfirstapply(pathname, pathfun, scale, depth + 1, max_depth);//gets size of directory and goes into directory
 			size += info.st_size;
 			if (size >= 0) // checks the size of directory
 			{
@@ -105,7 +106,7 @@ int depthfirstapply(char* path, int pathfun(char* path1, std::vector<int>* optio
 		}
 		else
 		{
-			int size = pathfun(pathname, options, scale);//get size of files
+			int size = pathfun(pathname, scale);//get size of files
 			if (size > 0)//adds file sizes
 			{
 				totalSize += size;
@@ -151,29 +152,29 @@ int depthfirstapply(char* path, int pathfun(char* path1, std::vector<int>* optio
 	return totalSize;//returns the size of the files in this directory(path)
 }
 
-void printHuman(int size, char* pathname, std::vector<char>* option, int scale)
+void printHuman(int size, char* pathname, int scale)
 {
-	const char* unit = " ";
+	char unit = ' ';
 	if (std::find(option.begin(), option.end(), 'H') != option.end()) != NULL) //checks if H is in arguments
 	{
 		if (size >= 1000000000)// convert to gigabyte if size is over that amount
 		{
 			size = (long long)(size / 1000000000);
-			unit = "G";
+			unit = 'G';
 		}
 		else if (size >= 1000000)// convert to megabyte if size is over that amount
 		{
 			size = (long long)(size / 1000000);
-			unit = "M";
+			unit = 'M';
 		}
 		else if (size >= 1000)// convert to kilabyte if size is over that amount
 		{
 			size = (long long)(size / 1000);
-			unit = "K";
+			unit = 'K';
 		}
-		printf("%s%-15d %s\n", pathname, size, unit );
+		printf("%s%-15d %c\n", pathname, size, unit );
 	}
-	if (strstr(options, "B") != NULL)//checks if B is in arguments
+	if (std::find(option.begin(), option.end(), 'B') != option.end()) != NULL)//checks if B is in arguments
 	{
 		size = size / scale; //scales size by user input
 		if (size < 1)//round up
@@ -183,17 +184,17 @@ void printHuman(int size, char* pathname, std::vector<char>* option, int scale)
 		printf("%-15s %d\n", pathname, size);
 
 	}
-	if (strstr(options, "m") != NULL)//scale by megabyte
+	if (std::find(option.begin(), option.end(), 'm') != option.end()) != NULL)//scale by megabyte
 	{
 		size = size / 1000000;
 		if (size < 1) size = 1;
-		printf("%s%-15d %s\n", pathname, size, "M");
+		printf("%s%-15d %c\n", pathname, size, 'M');
 	}
 }
 
 int main(int argc, char* argv[])
 {
-	std::vector<int> option;
+	
 	int input;
 
 
