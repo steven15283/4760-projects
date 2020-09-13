@@ -11,12 +11,12 @@
 //steven guo
 //9/9/2020
 
-int depthfirstapply(char* path, int pathfun(char* path1), int scale, int depth, int ino, int math_depth);
-int sizepathfun(char* path);
+int depthfirstapply(char* path, int pathfun(char* path, int scale), int scale, int depth, int max_depth);
+int sizepathfun(char* path, int scale);
 void printHuman(int size, char* pathname, int scale);
 
-static std::vector<int> option;
-int sizepathfun(char* path)
+std::vector<char> option;
+int sizepathfun(char* path, int scale)
 {
 	struct stat fileStat;
 
@@ -47,12 +47,11 @@ int sizepathfun(char* path)
 
 }
 
-int depthfirstapply(char* path, int pathfun(char* path1),  int scale, int depth, int max_depth)
+int depthfirstapply(char* path, int pathfun(char* path, int scale), int scale, int depth, int max_depth)
 {
 	struct stat info;
 	int totalSize = 0; //size
 	struct dirent* ent; //to hold directory entry at the current position in directory stream
-	char* filePath;//holds filepath used to 
 	DIR* dir = opendir(path); //open directory
 
 	if (!dir)//unable to open directory
@@ -65,8 +64,8 @@ int depthfirstapply(char* path, int pathfun(char* path1),  int scale, int depth,
 		char* name = ent->d_name; // current name of the path of the directory
 		char pathname[4096];//holds current pathname for directory
 
-		sprintf(filePath, "%s/%s", path, name);// save pathname
-		lstat(filePath, &info);// //gets the attributes of filepath
+		sprintf(pathname, "%s/%s", path, name);// save pathname
+		lstat(pathname, &info);// //gets the attributes of filepath
 		mode_t mode = info.st_mode; //gets the file type attribute of filepath
 		if (S_ISDIR(mode))//checks if mode is a directory
 		{
@@ -79,16 +78,16 @@ int depthfirstapply(char* path, int pathfun(char* path1),  int scale, int depth,
 				{
 					continue;
 				}
-				
-				if ((std::find(option.begin(), option.end(), 'H') != option.end()) || (std::find(option.begin(), option.end(), 'B') != option.end()) || (std::find(option.begin(), option.end(), 'm') != option.end())//check if H,B,m is in arguments
+
+				if ((std::find(option.begin(), option.end(), 'H') != option.end()) || (std::find(option.begin(), option.end(), 'B') != option.end()) || (std::find(option.begin(), option.end(), 'm') != option.end()))//check if H,B,m is in arguments
 				{
-					printHuman(size, pathname, options, scale);//when H,B,m is in arguments go to printHuman for unit conversion
+					printHuman(size, pathname, scale);//when H,B,m is in arguments go to printHuman for unit conversion
 				}
 				else if (std::find(option.begin(), option.end(), 'd') != option.end())//check if d is in argument
 				{
 					if (depth >= max_depth)//check if depth > max_depth
 					{
-						printHuman(size, pathname, options, scale);//print when max_depth is not below depth
+						printHuman(size, pathname, scale);//print when max_depth is not below depth
 					}
 					else
 					{
@@ -98,7 +97,7 @@ int depthfirstapply(char* path, int pathfun(char* path1),  int scale, int depth,
 				}
 				else
 				{
-					printf("%-15s %d\n", pathname, size);
+					printf("%-7d %s\n", size, pathname);
 				}
 			}
 
@@ -114,28 +113,28 @@ int depthfirstapply(char* path, int pathfun(char* path1),  int scale, int depth,
 			{
 				continue;
 			}
-			if ((std::find(option.begin(), option.end(), 'B') != option.end()) || (std::find(option.begin(), option.end(), 'm') != option.end())//if B or m is in arguments make the size=1 when size is less than 1
+			if ((std::find(option.begin(), option.end(), 'B') != option.end()) || (std::find(option.begin(), option.end(), 'm') != option.end()))//if B or m is in arguments make the size=1 when size is less than 1
 			{
 				if (size < 1)
 				{
 					size = 1;
 				}
-				
+
 			}
 
 			if (std::find(option.begin(), option.end(), 'a') != option.end())//check if a is in arguments
 			{//prints out the files with directories from this point on
-				
-				
+
+
 				if ((std::find(option.begin(), option.end(), 'H') != option.end()) || (std::find(option.begin(), option.end(), 'B') != option.end()) || (std::find(option.begin(), option.end(), 'm') != option.end()))//check if H,B,m is in arguments
 				{
-					printHuman(size, pathname, options, scale);//when H,B,m is in arguments go to printHuman for unit conversion
+					printHuman(size, pathname, scale);//when H,B,m is in arguments go to printHuman for unit conversion
 				}
 				else if (std::find(option.begin(), option.end(), 'd') != option.end())//check if d is in argument
 				{
 					if (depth >= max_depth)//check if depth > max_depth
 					{
-						printHuman(size, pathname, options, scale);//print when max_depth is not below depth
+						printHuman(size, pathname, scale);//print when max_depth is not below depth
 					}
 					else
 					{
@@ -145,10 +144,10 @@ int depthfirstapply(char* path, int pathfun(char* path1),  int scale, int depth,
 				}
 				else
 				{
-					printf("%-15s %d\n", pathname, size);
+					printf("%-7d %s\n", size, pathname);
 				}
 			}
-				
+
 		}
 	}
 	closedir(dir);//close directory
@@ -175,23 +174,43 @@ void printHuman(int size, char* pathname, int scale)
 			size = (long long)(size / 1000);
 			unit = 'K';
 		}
-		printf("%s%-15d %c\n", pathname, size, unit );
+		printf("%d%-7c %s\n", size, unit, pathname);
 	}
-	if (std::find(option.begin(), option.end(), 'B') != option.end()) )//checks if B is in arguments
+	if (std::find(option.begin(), option.end(), 'B') != option.end())//checks if B is in arguments
 	{
 		size = size / scale; //scales size by user input
 		if (size < 1)//round up
 		{
 			size = 1;
 		}
-		printf("%-15s %d\n", pathname, size);
+		printf("%-7d %s\n", size, pathname);
 
 	}
 	if (std::find(option.begin(), option.end(), 'm') != option.end())//scale by megabyte
 	{
 		size = size / 1000000;
 		if (size < 1) size = 1;
-		printf("%s%-15d %c\n", pathname, size, 'M');
+		printf("%d%-7c %s\n", size, 'M', pathname);
+	}
+}
+
+void printTotalsize(char* path, int pathfun(char* path, int scale), int scale, int depth, int max_depth)
+{
+	
+	int size = depthfirstapply(path, sizepathfun, scale, depth, max_depth);//variable to hold the total size
+	
+	if ((std::find(option.begin(), option.end(), 'H') != option.end()) || (std::find(option.begin(), option.end(), 'B') != option.end()) || (std::find(option.begin(), option.end(), 'm') != option.end()))
+	{// go to printHuman to convert into human readable 
+		printHuman(size, path, scale);
+	}
+	else 
+	{
+		
+		printf("%-7d %s\n", size, path);//print normal	
+	}
+	if (std::find(option.begin(), option.end(), 'c') != option.end())//
+	{
+		printf("%-7d %s\n", size, "Total");
 	}
 }
 
@@ -199,73 +218,75 @@ int main(int argc, char* argv[])
 {
 	
 	int input;
-	int size;
-
-	while (input = getopt(argc, argv, "hLHbacsB:md:")) != -1)
+	int scale = 0;
+	int max_depth = 0;
+	while ((input = getopt(argc, argv, "hLHbacsB:md:")) != -1)
 	{
 		switch (input)
 		{
-			case 'a':
-				option.push_back('a');
-				break;
-			case 'B':
-				option.push_back('B');
-				break;
-			case 'b':
-				option.push_back('b');
-				break;
-			case 'c':
-				option.push_back('c');
-				break;
-			case 'd':
-				option.push_back('d');
-				break;
-			case 'h':
-				printf("commands:\n");
-				printf("mydu [-a] [-B M | -b | -m] [-c] [-d N] [-H] [-L] [-s] <dir1> <dir2>\n");
-				printf("\n");
-				printf("-a = Write count for all files, not just directories.\n");
-				printf("-B M = Scale sizes by M before printing; for example, -BM prints size in units of 1,048,576 bytes.\n");
-				printf("-b = Print size in bytes.\n");
-				printf("-c = Print a grand total.\n");
-				printf("-d N = Print the total for a directory only if it is N or fewer levels below the command line argument.\n");
-				printf("-h = Print a help message or usage, and exit\n");
-				printf("-H = Human readable; print size in human readable format, for example, 1K, 234M, 2G.\n");
-				printf("-L = Dereference all symbolic links. By default, you will not dereference symbolic links.\n");
-				printf("-m = Same as -B 1048576.\n");
-				printf("-s = Display only a total for each argument.\n");
-				return EXIT_SUCCESS;
+		case 'a':
+			option.push_back('a');
+			break;
+		case 'B':
+			option.push_back('B');
+			break;
+		case 'b':
+			option.push_back('b');
+			scale = atoi(optarg);
+			break;
+		case 'c':
+			option.push_back('c');
+			break;
+		case 'd':
+			option.push_back('d');
+			max_depth = atoi(optarg);
+			break;
+		case 'h':
+			printf("commands:\n");
+			printf("mydu [-a] [-B M | -b | -m] [-c] [-d N] [-H] [-L] [-s] <dir1> <dir2>\n");
+			printf("\n");
+			printf("-a = Write count for all files, not just directories.\n");
+			printf("-B M = Scale sizes by M before printing; for example, -BM prints size in units of 1,048,576 bytes.\n");
+			printf("-b = Print size in bytes.\n");
+			printf("-c = Print a grand total.\n");
+			printf("-d N = Print the total for a directory only if it is N or fewer levels below the command line argument.\n");
+			printf("-h = Print a help message or usage, and exit\n");
+			printf("-H = Human readable; print size in human readable format, for example, 1K, 234M, 2G.\n");
+			printf("-L = Dereference all symbolic links. By default, you will not dereference symbolic links.\n");
+			printf("-m = Same as -B 1048576.\n");
+			printf("-s = Display only a total for each argument.\n");
+			return EXIT_SUCCESS;
 
-			case 'H':
-				option.push_back('H');
-				break;
-			case 'L':
-				option.push_back('L');
-				break;
-			case 'm':
-				option.push_back('m');
-				break;
-			case 's':
-				option.push_back('s');
-				break;
-			case 'd':
-				option.push_back('d');
-				break;
-			default:
-				perror("invalid command line arguments");
+		case 'H':
+			option.push_back('H');
+			break;
+		case 'L':
+			option.push_back('L');
+			break;
+		case 'm':
+			option.push_back('m');
+			scale = 1048576;
+			break;
+		case 's':
+			option.push_back('s');
+			break;
+		default:
+			perror("invalid command line arguments");
+			break;
+
 		}
 	}
 
 	if (argv[optind] == NULL)//checks if the first directory is listed
 	{
-		
-		size = depthfirstapply(".", sizepathfun, scale, 0, max_depth);//set first directory to current directory
+
+		printTotalsize(".", sizepathfun, scale, 0, max_depth);//set first directory to current directory
 	}
 	else
 	{
 		for (; optind < argc; optind++)
 		{
-			size = depthfirstapply(argv[optind], sizepathfun, scale, 0, max_depth);
+			printTotalsize(argv[optind], sizepathfun, scale, 0, max_depth);
 		}
 	}
 
