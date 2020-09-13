@@ -199,7 +199,7 @@ int main(int argc, char* argv[])
 {
 	
 	int input;
-
+	int size;
 
 	while (input = getopt(argc, argv, "hLHbacsB:md:")) != -1)
 	{
@@ -256,17 +256,18 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	if (argv[optind] == NULL)
+	if (argv[optind] == NULL)//checks if the first directory is listed
 	{
-		showtreesize(".", sizepathfun, option_string, scale, inode, 0, max_depth);
+		
+		size = depthfirstapply(".", sizepathfun, scale, 0, max_depth);//set first directory to current directory
 	}
 	else
 	{
 		for (; optind < argc; optind++)
 		{
-			showtreesize(argv[optind], sizepathfun, option_string, scale, inode, 0, max_depth);
+			size = depthfirstapply(argv[optind], sizepathfun, scale, 0, max_depth);
 		}
 	}
 
-
+	return EXIT_SUCCESS;
 }
