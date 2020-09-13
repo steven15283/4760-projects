@@ -11,7 +11,7 @@
 //steven guo
 //9/9/2020
 
-int depthfirstapply(char* path, int pathfun(char* path1,), int scale, int depth, int ino, int math_depth);
+int depthfirstapply(char* path, int pathfun(char* path1), int scale, int depth, int ino, int math_depth);
 int sizepathfun(char* path);
 void printHuman(int size, char* pathname, int scale);
 
@@ -34,11 +34,11 @@ int sizepathfun(char* path)
 
 		if (std::find(option.begin(), option.end(), 'B') != option.end() || std::find(option.begin(), option.end(), 'b') != option.end() || std::find(option.begin(), option.end(), 'm') != option.end())//when the arguments are B,b,m 
 		{//it returns it in bytes
-			return statbuf.st_size;
+			return fileStat.st_size;
 		}
 		else
 		{//it returns it in blocks
-			return (statbuf.st_blocks / 2);
+			return (fileStat.st_blocks / 2);
 		}
 	}
 
@@ -62,10 +62,10 @@ int depthfirstapply(char* path, int pathfun(char* path1),  int scale, int depth,
 
 	while ((ent = readdir(dir)) != NULL)//traverses directory until dir is not a directory
 	{
-		char* pathname = ent->d_name; // current name of the path of the directory
+		char* name = ent->d_name; // current name of the path of the directory
 		char pathname[4096];//holds current pathname for directory
 
-		sprintf(filePath, "%s/%s", path, pathname);// save pathname
+		sprintf(filePath, "%s/%s", path, name);// save pathname
 		lstat(filePath, &info);// //gets the attributes of filepath
 		mode_t mode = info.st_mode; //gets the file type attribute of filepath
 		if (S_ISDIR(mode))//checks if mode is a directory
@@ -157,8 +157,8 @@ int depthfirstapply(char* path, int pathfun(char* path1),  int scale, int depth,
 
 void printHuman(int size, char* pathname, int scale)
 {
-	char unit = ' ';
-	if (std::find(option.begin(), option.end(), 'H') != option.end()) ) //checks if H is in arguments
+	char unit;
+	if (std::find(option.begin(), option.end(), 'H') != option.end()) //checks if H is in arguments
 	{
 		if (size >= 1000000000)// convert to gigabyte if size is over that amount
 		{
@@ -253,6 +253,18 @@ int main(int argc, char* argv[])
 				break;
 			default:
 				perror("invalid command line arguments");
+		}
+	}
+
+	if (argv[optind] == NULL)
+	{
+		showtreesize(".", sizepathfun, option_string, scale, inode, 0, max_depth);
+	}
+	else
+	{
+		for (; optind < argc; optind++)
+		{
+			showtreesize(argv[optind], sizepathfun, option_string, scale, inode, 0, max_depth);
 		}
 	}
 
