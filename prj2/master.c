@@ -3,15 +3,20 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+//steven guo
+//9/20/2020
 
 
 int main(int argc, char* argv[])
 {
-
+	FILE* file;
 	int childProcessNum = 4;
 	int childSystemNum = 2;
 	int time = 100;
+	char* filename;
 	while ((opt = getopt(argc, argv, "hn:xs:xt:x")) != -1)
 	{
 		switch (opt)
@@ -25,15 +30,12 @@ int main(int argc, char* argv[])
 			printf("-t time = The time in seconds after which the process will terminate, even if it has not finished.(Default 100)\n");
 			return EXIT_SUCCESS;
 		case 'n':
-			option.push_back('n');
 			childProcessNum = atoi(optarg);
 			break;
 		case 's':
-			option.push_back('s');
 			childSystemNum = atoi(optarg);
 			break;
 		case 't':
-			option.push_back('t');
 			time = atoi(optarg);
 			break;
 		default:
@@ -42,5 +44,19 @@ int main(int argc, char* argv[])
 
 		}
 	}
+
+	if (argv[optind] == NULL)//checks if the first directory is listed
+	{
+		perror("file not specified");
+	}
+	else
+	{
+		filename = argv[optind];
+	}
+
+
+
+
+	
 
 }
