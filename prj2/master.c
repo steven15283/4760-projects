@@ -12,11 +12,17 @@
 
 int main(int argc, char* argv[])
 {
-	FILE* file;
+	FILE* fptr;
 	int childProcessNum = 4;
 	int childSystemNum = 2;
 	int time = 100;
-	char* filename;
+	char* filename = NULL;
+	char* mylist[10];
+	char* strArray[10];
+	char line[255];
+	char c;
+	int lineCount = 0;
+	int arrayCount = 0;
 	while ((opt = getopt(argc, argv, "hn:xs:xt:x")) != -1)
 	{
 		switch (opt)
@@ -45,7 +51,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	if (argv[optind] == NULL)//checks if the first directory is listed
+	if (argv[optind] == NULL)
 	{
 		perror("file not specified");
 	}
@@ -54,7 +60,55 @@ int main(int argc, char* argv[])
 		filename = argv[optind];
 	}
 
+	fptr = fopen(filename, "r");
+	if (fptr == NULL)
+	{
+		fprintf(stderr, "File %s not found\n", argv[1]);
+		exit(EXIT_FAILURE);
+	}
+	c = fgetc(fptr);
 
+	if (isalpha(c))
+	{
+		line[lineCount] = c;
+		count++;
+	}
+	elseif(isspace(c))
+	{
+
+	}
+	else
+	{
+
+	}
+
+	while (c != EOF)
+	{
+		c = fgetc(fptr);
+		if (isalpha(c))
+		{
+			line[lineCount] = c;
+			count++;
+		}
+		elseif (isspace(c))
+		{
+
+		}
+		else
+		{
+			if (c == '\n')
+			{
+				line[lineCount] = c;
+				strArray[arrayCount] = line;
+				mylist[arrayCount] = *strArray[arrayCount];
+				arrayCount++;
+				char line[255];
+				count = 0;
+
+			}
+		}		
+	}
+		
 
 
 	

@@ -14,7 +14,6 @@
 bool isPalindrome(char str[])
 {
 	bool palindromeChk = true;
-	char ch;
 	int lm = 0;//left most index
 	int rm = strlen(str) - 1;//right most index
 
