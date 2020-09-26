@@ -6,9 +6,19 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
+#include<sys/shm.h>
 //steven guo
 //9/20/2020
 
+#define PERM (S_IRUSR | S_IWUSR)
+#define SIZE 50
+#define LENGTH 256
+
+typedef struct {
+	int id;
+	int index;  //key_t key;
+	char data[SIZE][LENGTH];
+} shared_memory;
 
 int main(int argc, char* argv[])
 {
@@ -17,12 +27,10 @@ int main(int argc, char* argv[])
 	int childSystemNum = 2;
 	int time = 100;
 	char* filename = NULL;
-	char* mylist[10];
-	char* strArray[10];
 	char line[255];
 	char c;
-	int lineCount = 0;
-	int arrayCount = 0;
+	int opt;
+	int count = 0;
 	while ((opt = getopt(argc, argv, "hn:xs:xt:x")) != -1)
 	{
 		switch (opt)
@@ -51,6 +59,27 @@ int main(int argc, char* argv[])
 		}
 	}
 
+
+	int key = 92111;
+	int shmid = shmget(key, sizeof(shared_memory), PERM | IPC_CREAT);
+
+	if (shmid < 0)
+	{
+		perror("shmget error");
+		exit(1);
+	}
+	shared_memory* shmptr = (shared_memory*)shmat(shmid, NULL, 0);
+
+	// shmat to attach to shared memory 
+	char* shmptr = (char*)shmat(shmid, NULL, 0);
+
+	if (ptr == (void*)-1)
+	{
+		perror("Failed to attach existing shared memory segment");
+		return 1;
+	}
+
+
 	if (argv[optind] == NULL)
 	{
 		perror("file not specified");
@@ -70,10 +99,10 @@ int main(int argc, char* argv[])
 
 	if (isalpha(c))
 	{
-		line[lineCount] = c;
+		line[count] = c;
 		count++;
 	}
-	elseif(isspace(c))
+	else if(isspace(c))
 	{
 
 	}
@@ -87,7 +116,7 @@ int main(int argc, char* argv[])
 		c = fgetc(fptr);
 		if (isalpha(c))
 		{
-			line[lineCount] = c;
+			line[count] = c;
 			count++;
 		}
 		elseif (isspace(c))
@@ -98,19 +127,13 @@ int main(int argc, char* argv[])
 		{
 			if (c == '\n')
 			{
-				line[lineCount] = c;
-				strArray[arrayCount] = line;
-				mylist[arrayCount] = *strArray[arrayCount];
-				arrayCount++;
-				char line[255];
+				line[count] = c;
+				strcpy(ptr->data[count], line);
+				char line[LENGTH];
 				count = 0;
 
 			}
 		}		
 	}
-		
-
-
-	
 
 }
