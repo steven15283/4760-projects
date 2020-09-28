@@ -10,27 +10,37 @@
 //steven guo
 //9/20/2020
 
-#define PERM (S_IRUSR | S_IWUSR)
 #define SIZE 50
 #define LENGTH 256
 
 typedef struct {
-	int id;
 	int index;  //key_t key;
 	char data[SIZE][LENGTH];
 } shared_memory;
 
+//global vars
+int childProcessNum = 4;//sets default number of child processes master will create
+int childSystemNum = 2;//sets default number of child processes that can be in system at the same time
+int time = 100; //sets default time
+int currChildNum = 0;
+int currSysChildNum = 0;
+enum state { idle, want_in, in_cs };
+extern int turn;
+extern state flag[n]; // Flag corresponding to each process in shared memory
+
+void createChild();
+
 int main(int argc, char* argv[])
 {
 	FILE* fptr;//file pointer
-	int childProcessNum = 4;//sets default number of child processes
-	int childSystemNum = 2;//sets default number of child processes in system
-	int time = 100;
-	char* filename = NULL;
-	char line[255];
-	char c;
-	int opt;
-	int count = 0;
+	
+	char* filename = NULL;//name of the file
+	char line[255];//one string
+	char c;//gets each character of the file
+	int opt;//for getopt
+	int count = 0;//count for putting strings into 2d array
+
+
 	while ((opt = getopt(argc, argv, "hn:xs:xt:x")) != -1)
 	{
 		switch (opt)
@@ -45,12 +55,27 @@ int main(int argc, char* argv[])
 			return EXIT_SUCCESS;
 		case 'n':
 			childProcessNum = atoi(optarg);
+			if (childProcessNum <= 0)
+			{
+				perror("maximum total of child process can not be <= 0");
+				return EXIT_FAILURE;
+			}
 			break;
 		case 's':
 			childSystemNum = atoi(optarg);
+			if (childSystemNum <= 0)
+			{
+				perror(" the number of children allowed to exist in the system at the same time can not be <= 0");
+				return EXIT_FAILURE;
+			}
 			break;
 		case 't':
 			time = atoi(optarg);
+			if (time <= 0)
+			{
+				perror("time can not be <= 0");
+				return EXIT_FAILURE;
+			}
 			break;
 		default:
 			fprintf(stderr, "%s: Please use \"-h\" option for more info.\n", argv[0]);
@@ -60,8 +85,9 @@ int main(int argc, char* argv[])
 	}
 
 
-	int key = ftok("Makefile", 'p');
-	int shmid = shmget(key, sizeof(shared_memory), PERM | IPC_CREAT);
+	int key = ftok("Makefile", 'a');
+
+	int shmid = shmget(key, sizeof(shared_memory), (S_IRUSR | S_IWUSR | IPC_CREAT);
 
 	if (shmid < 0)
 	{
@@ -79,17 +105,21 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	int parentKey = ftok("Makefile", 'b');
+	int parentID;
+	pid_t* parent;
 
-	if (argv[optind] == NULL)
+	if (argv[optind] == NULL)//check if user entered a file
 	{
 		perror("file not specified");
 	}
 	else
 	{
-		filename = argv[optind];
+		filename = argv[optind];//gets file name from cmd line
 	}
 
-	fptr = fopen(filename, "r");
+	fptr = fopen(filename, "r");//open file for reading
+
 	if (fptr == NULL)
 	{
 		fprintf(stderr, "File %s not found\n", argv[1]);
@@ -110,7 +140,8 @@ int main(int argc, char* argv[])
 	{
 
 	}
-
+	//puts each character from each line into line char array then puts into 2d array when \n ==c
+	int i = 0;
 	while (c != EOF)
 	{
 		c = fgetc(fptr);
@@ -128,14 +159,35 @@ int main(int argc, char* argv[])
 			if (c == '\n')
 			{
 				line[count] = c;
-				strcpy(shmptr->data[count], line);
-				char line[LENGTH];
+				strcpy(shmptr->data[i], line);
+				char line[LENGTH];//reset array for next line
 				count = 0;
-
+				i++;
 			}
 		}		
 	}
+	
+	while (currChildNum < childProcessNum)
+	{
+		createChild(currChildNum);
+		currChildNum++;
+	}
 
 
+	void createChild(int num)
+	{
+		if (currChildNum < childSystemNum)
+		{
+			childProcessNum--;
+			currSysChildNum++;
+			if (fork() == 0)
+			{
+
+			}
+
+		}
+		
+		
+	}
 
 }
