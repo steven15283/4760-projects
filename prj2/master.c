@@ -22,9 +22,9 @@ typedef struct {
 
 int main(int argc, char* argv[])
 {
-	FILE* fptr;
-	int childProcessNum = 4;
-	int childSystemNum = 2;
+	FILE* fptr;//file pointer
+	int childProcessNum = 4;//sets default number of child processes
+	int childSystemNum = 2;//sets default number of child processes in system
 	int time = 100;
 	char* filename = NULL;
 	char line[255];
@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
 	}
 
 
-	int key = 92111;
+	int key = ftok("Makefile", 'p');
 	int shmid = shmget(key, sizeof(shared_memory), PERM | IPC_CREAT);
 
 	if (shmid < 0)
@@ -71,9 +71,9 @@ int main(int argc, char* argv[])
 	shared_memory* shmptr = (shared_memory*)shmat(shmid, NULL, 0);
 
 	// shmat to attach to shared memory 
-	char* shmptr = (char*)shmat(shmid, NULL, 0);
 
-	if (ptr == (void*)-1)
+
+	if (shmptr == (void*)-1)
 	{
 		perror("Failed to attach existing shared memory segment");
 		return 1;
@@ -128,12 +128,14 @@ int main(int argc, char* argv[])
 			if (c == '\n')
 			{
 				line[count] = c;
-				strcpy(ptr->data[count], line);
+				strcpy(shmptr->data[count], line);
 				char line[LENGTH];
 				count = 0;
 
 			}
 		}		
 	}
+
+
 
 }
