@@ -27,6 +27,7 @@ int currSysChildNum = 0;
 enum state { idle, want_in, in_cs };
 extern int turn;
 extern state flag[n]; // Flag corresponding to each process in shared memory
+int status = 0
 
 void createChild();
 
@@ -94,9 +95,9 @@ int main(int argc, char* argv[])
 		perror("shmget error");
 		exit(1);
 	}
-	shared_memory* shmptr = (shared_memory*)shmat(shmid, NULL, 0);
+	shared_memory* shmptr = (shared_memory*)shmat(shmid, NULL, 0);// shmat to attach to shared memory
 
-	// shmat to attach to shared memory 
+	 
 
 
 	if (shmptr == (void*)-1)
@@ -167,6 +168,16 @@ int main(int argc, char* argv[])
 		}		
 	}
 	
+	parentId = shmget(parentKey, sizeof(pid_t), IPC_CREAT | S_IRUSR | S_IWUSR);//allocate shared memory for parent id
+	if (parentId < 0) {
+		perror("shmget: Failed to allocate shared memory for parent id");
+		exit(1);
+	}
+	else 
+	{
+		parent = (pid_t*)shmat(parentID, NULL, 0);//attach parent into shared memory
+	}
+
 	while (currChildNum < childProcessNum)
 	{
 		createChild(currChildNum);
@@ -178,13 +189,22 @@ int main(int argc, char* argv[])
 	{
 		if (currChildNum < childSystemNum)
 		{
-			childProcessNum--;
 			currSysChildNum++;
 			if (fork() == 0)
 			{
-
-			}
-
+				if (num == 1)
+				{
+					(*parent) = getpid();
+				}
+			}	
+			setpgid(0, (*parent));
+			execl("./palin", "palin", to_string(num).c_str(), (char*)NULL);
+			exit(0);
+		}
+		else
+		{
+			waitpid(-(*parent), &status, 0);
+			currSysChildNum--;
 		}
 		
 		
