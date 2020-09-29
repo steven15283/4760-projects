@@ -11,14 +11,30 @@
 
 enum state { idle, want_in, in_cs };
 
-bool isPalindrome(char str[])
+bool isPalindrome(char str[]);
 
 int main(int argc, char* argv[])
 {
+	int index = atoi(argv[1]);
 
+	int key = ftok("Makefile", 'a');
+
+	int shmid = shmget(key, sizeof(shared_memory), (S_IRUSR | S_IWUSR | IPC_CREAT);
+
+	if (shmid < 0)
+	{
+		perror("shmget error");
+		exit(1);
+	}
+	else
+	{
+		shared_memory* shmptr = (shared_memory*)shmat(shmid, NULL, 0);// shmat to attach to shared memory
+	}
+	
+	//start at line 132
 
 }
-bool isPalindrome(char str[])
+bool isPalindrome(char str[], int index)
 {
 	FILE* palinYes = fopen("palin.out", "w");
 	FILE* palinNo = fopen("nopalin.out", "w");
