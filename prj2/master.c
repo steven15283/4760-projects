@@ -10,30 +10,60 @@
 //steven guo
 //9/20/2020
 
-#define SIZE 50
 #define LENGTH 256
 #define MAXPROCESS 20
 
 typedef struct {
-	char data[SIZE][LENGTH]; //array of strings to check if its a palindrome
+	char data[MAXPROCESS][LENGTH]; //array of strings to check if its a palindrome
 	int flag[MAXPROCESS];// array for flag
 	int turn;// number for turn
 	int numOfChild;
 } shared_memory;
 
 //global vars
-int childProcessNum = 4;//sets default number of child processes master will create
-int childSystemNum = 2;//sets default number of child processes that can be in system at the same time
+int childProcessTotal = 4;//sets default number of child processes master will create
+int total_Child_In_System = 2;//sets default number of child processes that can be in system at the same time
 int time = 100; //sets default time
-int currChildNum = 0;
-int currSysChildNum = 0;
+int currChildCount = 0;//sets the amount of children 
+int currSysChildCount = 0;//sets the amount of children in the system
 
 enum state { idle, want_in, in_cs };
 
 extern state flag[n]; // Flag corresponding to each process in shared memory
 int status = 0
 
-void createChild();
+void createChildProcess(int num)
+{
+
+	if (currChildCount < total_Child_In_System)
+	{
+		spawnChild(num);
+	}
+	else
+	{
+		waitpid(-(*parent), &status, 0);
+		currSysChildCount--;
+		cout << currentNumOfProcessesInSystem << " processes in system.\n";
+		spawnChild(num);
+	}
+
+
+}
+
+void spawnChild(int num)
+{
+	currSysChildCount++;
+	if (fork() == 0)
+	{
+		if (num == 1)
+		{
+			(*parent) = getpid();
+		}
+		setpgid(0, (*parent));
+		execl("./palin", "palin", to_string(num).c_str(), (char*)NULL);//executes palin with num as an argument
+		exit(0);
+	}
+}
 
 int main(int argc, char* argv[])
 {
@@ -59,27 +89,27 @@ int main(int argc, char* argv[])
 			printf("-t time = The time in seconds after which the process will terminate, even if it has not finished.(Default 100)\n");
 			return EXIT_SUCCESS;
 		case 'n':
-			childProcessNum = atoi(optarg);
-			if (childProcessNum <= 0)
+			childProcessTotal = atoi(optarg);//gets user value of total child processes
+			if (childProcessTotal <= 0)
 			{
 				perror("maximum total of child process can not be <= 0");
 				return EXIT_FAILURE;
 			}
-			if (childProcessNum > 20)
+			if (childProcessTotal > 20)//hard limit for childProcessTotal
 			{
-				childProcessNum = 20;
+				childProcessTotal = 20;
 			}
 			break;
 		case 's':
-			childSystemNum = atoi(optarg);
-			if (childSystemNum <= 0)
+			total_Child_In_System = atoi(optarg);//gets user value of total_Child_In_System
+			if (total_Child_In_System <= 0)
 			{
 				perror(" the number of children allowed to exist in the system at the same time can not be <= 0");
 				return EXIT_FAILURE;
 			}
 			break;
 		case 't':
-			time = atoi(optarg);
+			time = atoi(optarg);//gets user value of time
 			if (time <= 0)
 			{
 				perror("time can not be <= 0");
@@ -103,10 +133,8 @@ int main(int argc, char* argv[])
 		perror("shmget error");
 		exit(1);
 	}
+
 	shared_memory* shmptr = (shared_memory*)shmat(shmid, NULL, 0);// shmat to attach to shared memory
-
-	 
-
 
 	if (shmptr == (void*)-1)
 	{
@@ -153,6 +181,10 @@ int main(int argc, char* argv[])
 	int i = 0;
 	while (c != EOF)
 	{
+		if(i==20)//hard limit for hsared array 20 processes = 20 strings
+		{
+			break;
+		}
 		c = fgetc(fptr);
 		if (isalpha(c))
 		{
@@ -176,7 +208,7 @@ int main(int argc, char* argv[])
 		}		
 	}
 
-	shmptr->numOfChild = childProcessNum;//gets total number of childern and puts into struct to be shared through memory
+	shmptr->numOfChild = childProcessTotal;//gets total number of childern and puts into struct to be shared through memory
 	parentId = shmget(parentKey, sizeof(pid_t), IPC_CREAT | S_IRUSR | S_IWUSR);//allocate shared memory for parent id
 
 	if (parentId < 0) 
@@ -189,39 +221,16 @@ int main(int argc, char* argv[])
 		parent = (pid_t*)shmat(parentID, NULL, 0);//attach parent into shared memory
 	}
 
-	while (currChildNum < childProcessNum)
+	while (currChildCount <= childProcessTotal)
 	{
-		createChild(currChildNum);
-		currChildNum++;
+		createChildProcess(currChildCount);
+		currChildCount++;
 	}
 
-
-	void createChild(int num)
-	{
-
-		if (currChildNum < childSystemNum)
-		{
-			currSysChildNum++;
-			if (fork() == 0)
-			{
-				if (num == 1)
-				{
-					(*parent) = getpid();
-				}
-				setpgid(0, (*parent));
-				execl("./palin", "palin", to_string(num).c_str(), (char*)NULL);//executes palin with num as an argument
-				exit(0);
-			}	
-			
-		}
-		else
-		{
-			waitpid(-(*parent), &status, 0);
-			currSysChildNum--;
-
-		}
-		
-		
-	}
+	//release memory
+	shmdt(shmptr);
+	shmctl(shmid, IPC_RMID, NULL);
+	exit(0);
+	
 
 }
