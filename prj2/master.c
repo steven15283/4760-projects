@@ -12,10 +12,12 @@
 
 #define SIZE 50
 #define LENGTH 256
-
+#define MAXPROCESS 20
 typedef struct {
 	int index;  //key_t key;
 	char data[SIZE][LENGTH];
+	int flag[MAXPROCESS];
+	int turn[MAXPROCESS];
 } shared_memory;
 
 //global vars
@@ -187,6 +189,7 @@ int main(int argc, char* argv[])
 
 	void createChild(int num)
 	{
+
 		if (currChildNum < childSystemNum)
 		{
 			currSysChildNum++;
@@ -196,15 +199,17 @@ int main(int argc, char* argv[])
 				{
 					(*parent) = getpid();
 				}
+				setpgid(0, (*parent));
+				execl("./palin", "palin", to_string(num).c_str(), (char*)NULL);
+				exit(0);
 			}	
-			setpgid(0, (*parent));
-			execl("./palin", "palin", to_string(num).c_str(), (char*)NULL);
-			exit(0);
+			
 		}
 		else
 		{
 			waitpid(-(*parent), &status, 0);
 			currSysChildNum--;
+
 		}
 		
 		
