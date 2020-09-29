@@ -13,11 +13,12 @@
 #define SIZE 50
 #define LENGTH 256
 #define MAXPROCESS 20
+
 typedef struct {
-	int index;  //key_t key;
-	char data[SIZE][LENGTH];
-	int flag[MAXPROCESS];
-	int turn[MAXPROCESS];
+	char data[SIZE][LENGTH]; //array of strings to check if its a palindrome
+	int flag[MAXPROCESS];// array for flag
+	int turn;// number for turn
+	int numOfChild;
 } shared_memory;
 
 //global vars
@@ -26,8 +27,9 @@ int childSystemNum = 2;//sets default number of child processes that can be in s
 int time = 100; //sets default time
 int currChildNum = 0;
 int currSysChildNum = 0;
+
 enum state { idle, want_in, in_cs };
-extern int turn;
+
 extern state flag[n]; // Flag corresponding to each process in shared memory
 int status = 0
 
@@ -38,7 +40,7 @@ int main(int argc, char* argv[])
 	FILE* fptr;//file pointer
 	
 	char* filename = NULL;//name of the file
-	char line[255];//one string
+	char line[256];//one string
 	char c;//gets each character of the file
 	int opt;//for getopt
 	int count = 0;//count for putting strings into 2d array
@@ -62,6 +64,10 @@ int main(int argc, char* argv[])
 			{
 				perror("maximum total of child process can not be <= 0");
 				return EXIT_FAILURE;
+			}
+			if (childProcessNum > 20)
+			{
+				childProcessNum = 20;
 			}
 			break;
 		case 's':
@@ -169,9 +175,12 @@ int main(int argc, char* argv[])
 			}
 		}		
 	}
-	
+
+	shmptr->numOfChild = childProcessNum;//gets total number of childern and puts into struct to be shared through memory
 	parentId = shmget(parentKey, sizeof(pid_t), IPC_CREAT | S_IRUSR | S_IWUSR);//allocate shared memory for parent id
-	if (parentId < 0) {
+
+	if (parentId < 0) 
+	{
 		perror("shmget: Failed to allocate shared memory for parent id");
 		exit(1);
 	}
@@ -200,7 +209,7 @@ int main(int argc, char* argv[])
 					(*parent) = getpid();
 				}
 				setpgid(0, (*parent));
-				execl("./palin", "palin", to_string(num).c_str(), (char*)NULL);
+				execl("./palin", "palin", to_string(num).c_str(), (char*)NULL);//executes palin with num as an argument
 				exit(0);
 			}	
 			

@@ -9,6 +9,17 @@
 //steven guo
 //9/20/2020
 
+#define SIZE 50
+#define LENGTH 255
+#define MAXPROCESS 20
+
+typedef struct {
+	char data[SIZE][LENGTH];
+	int flag[MAXPROCESS];
+	int turn;
+	int numOfChild;
+} shared_memory;
+
 enum state { idle, want_in, in_cs };
 
 bool isPalindrome(char str[]);
@@ -31,10 +42,46 @@ int main(int argc, char* argv[])
 		shared_memory* shmptr = (shared_memory*)shmat(shmid, NULL, 0);// shmat to attach to shared memory
 	}
 	
-	//start at line 132
+	process(index);
+	
+
 
 }
-bool isPalindrome(char str[], int index)
+
+void process(const int i)
+{
+	int n = shmptr->numOfChild;
+	int j;
+	do
+	{
+			do
+			{
+				shmptr->flag[i] = want_in; // Raise my flag
+				j = turn; // Set local variable
+				while (j != i)
+					j = (shmptr->flag[j] != idle) ? turn : (j + 1) % n;
+				// Declare intention to enter critical section
+				flag[i] = in_cs;
+				// Check that no one else is in critical section
+				for (j = 0; j < n; j++)
+					if ((j != i) && (flag[j] == in_cs))
+						break;
+			} while (j < n) || (turn != i && shmptr->flag[turn] != idle);
+			// Assign turn to self and enter critical section
+			turn = i;
+			critical_section();
+			// Exit section
+			j = (turn + 1) % n;
+			while (shmptr->flag[j] == idle)
+				j = (j + 1) % n;
+			// Assign turn to next waiting process; change own flag to idle
+			turn = j;
+			shmptr->flag[i] = idle;
+			remainder_section();
+	} while (1);
+}
+
+void isPalindrome(char str[], int index)
 {
 	FILE* palinYes = fopen("palin.out", "w");
 	FILE* palinNo = fopen("nopalin.out", "w");
@@ -50,7 +97,6 @@ bool isPalindrome(char str[], int index)
 		perror("Failed to open file:nopalin.out");
 		exit(EXIT_FAILURE);
 	}
-	bool palindromeChk = true;
 	int lm = 0;//left most index
 	int rm = strlen(str) - 1;//right most index
 
@@ -58,7 +104,6 @@ bool isPalindrome(char str[], int index)
 	{
 		if (str[lm++] != str[rm--])
 		{
-			palindrome = false;
 			fputs(str[], palinNo);
 			fputs("\n", palinNo);
 			fclose(palinNo);
@@ -68,5 +113,4 @@ bool isPalindrome(char str[], int index)
 	fputs(str[], palinYes);
 	fputs("\n", palinYes);
 	fclose(palinYes);
-	return palindromeChk;
 }
