@@ -25,52 +25,6 @@ typedef struct {
 
 enum state { idle, want_in, in_cs };
 
-void process(const int i)
-{
-	int n = shmptr->numOfChild;
-	int j;
-
-	do
-	{
-		do
-		{
-			shmptr->flag[i] = want_in; // Raise my flag
-			j = shmptr->turn; // Set local variable
-			while (j != i)
-				j = (shmptr->flag[j] != idle) ? shmptr->turn : (j + 1) % n;
-			// Declare intention to enter critical section
-			flag[i] = in_cs;
-			// Check that no one else is in critical section
-			for (j = 0; j < n; j++)
-				if ((j != i) && (flag[j] == in_cs))
-					break;
-		} while (j < n) || (shmptr->turn != i && shmptr->flag[turn] != idle);
-		// Assign turn to self and enter critical section
-		shmptr->turn = i;
-		if (isPalindrome(shmptr->data[i]))
-		{
-			sleep(rand() % 3);
-			sortPalinOutput(shmptr->data[i], true)
-		}
-		else
-		{
-			sleep(rand() % 3);
-			sortPalinOutput(shmptr->data[i], false)
-		}
-		// Exit section
-		j = (shmptr->turn + 1) % n;
-		while (shmptr->flag[j] == idle)
-		{
-			j = (j + 1) % n;
-		}
-
-		// Assign turn to next waiting process; change own flag to idle
-		shmptr->turn = j;
-		shmptr->flag[i] = idle;
-		remainder_section();
-	} while (1);
-}
-
 bool isPalindrome(char str[])
 {
 	bool palindrome = true;
@@ -121,6 +75,55 @@ void sortPalinOutput(char str[], bool palindrome)
 
 }
 
+void process(const int i)
+{
+	int n = shmptr->numOfChild;
+	int j;
+
+	do
+	{
+		do
+		{
+			
+			shmptr->flag[i] = want_in; // Raise my flag
+			j = shmptr->turn; // Set local variable
+			while (j != i)
+				j = (shmptr->flag[j] != idle) ? shmptr->turn : (j + 1) % n;
+			// Declare intention to enter critical section
+			printf("Process:%d - wants to enter CS\n", i);
+			flag[i] = in_cs;
+			// Check that no one else is in critical section
+			for (j = 0; j < n; j++)
+				if ((j != i) && (flag[j] == in_cs))
+					break;
+		} while (j < n) || (shmptr->turn != i && shmptr->flag[turn] != idle);
+		printf("Process:%d - entered CS\n", i);
+		shmptr->turn = i;// Assign turn to self and enter critical section
+		if (isPalindrome(shmptr->data[i]))
+		{
+			sleep(rand() % 3);
+			sortPalinOutput(shmptr->data[i], true)
+		}
+		else
+		{
+			sleep(rand() % 3);
+			sortPalinOutput(shmptr->data[i], false)
+		}
+		// Exit section
+		j = (shmptr->turn + 1) % n;
+		printf("Process:%d - exited CS\n", i);
+		while (shmptr->flag[j] == idle)
+		{
+			j = (j + 1) % n;
+		}
+
+		// Assign turn to next waiting process; change own flag to idle
+		shmptr->turn = j;
+		shmptr->flag[i] = idle;
+		kill(getppid(), SIGUSR2);
+	} while (1);
+}
+
 int main(int argc, char* argv[])
 {
 	int index = atoi(argv[1]);
@@ -140,7 +143,7 @@ int main(int argc, char* argv[])
 	}
 	
 	process(index);
-
+	return 0;
 }
 
 

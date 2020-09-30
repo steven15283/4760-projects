@@ -25,7 +25,7 @@ int childProcessTotal = 4;//sets default number of child processes master will c
 int total_Child_In_System = 2;//sets default number of child processes that can be in system at the same time
 int time = 100; //sets default time
 int currChildCount = 0;//sets the amount of children 
-int currSysChildCount = 0;//sets the amount of children in the system
+int currChildSysCount = 0;//sets the amount of children in the system
 
 enum state { idle, want_in, in_cs };
 
@@ -42,7 +42,7 @@ void createChildProcess(int num)
 	else
 	{
 		waitpid(-(*parent), &status, 0);
-		currSysChildCount--;
+		currChildSysCount--;
 		cout << currentNumOfProcessesInSystem << " processes in system.\n";
 		spawnChild(num);
 	}
@@ -52,7 +52,7 @@ void createChildProcess(int num)
 
 void spawnChild(int num)
 {
-	currSysChildCount++;
+	currChildSysCount++;
 	if (fork() == 0)
 	{
 		if (num == 1)
@@ -65,10 +65,47 @@ void spawnChild(int num)
 	}
 }
 
+void  timeoutSignal(int sig)
+{
+	if (time(0) - startTime >= time) 
+	{
+		cout << "Master: time is up!\n";
+		killpg((*parent), SIGUSR1);
+
+		for (int 1 = 0; i < currChildSysCount; i++)
+		{
+			wait(NULL);
+		}
+	}
+
+	//release memory
+	shmdt(shmptr);
+	shmctl(shmid, IPC_RMID, NULL);
+	printf("exiting master process");
+	exit(0);
+}
+
+void sigHandler(int signal) 
+{
+	killpg((*parent), SIGTERM);
+
+	for (int i = 0; i < currChildSysCount; i++)
+	{
+		wait(NULL);
+	}
+
+	//release memory
+	shmdt(shmptr);
+	shmctl(shmid, IPC_RMID, NULL);
+	printf("exiting master process");
+	exit(0);
+}
+
 int main(int argc, char* argv[])
 {
+	signal(SIGUSR2, timeoutSignal);
+	signal(SIGINT, sigHandler);
 	FILE* fptr;//file pointer
-	
 	char* filename = NULL;//name of the file
 	char line[256];//one string
 	char c;//gets each character of the file
@@ -221,10 +258,18 @@ int main(int argc, char* argv[])
 		parent = (pid_t*)shmat(parentID, NULL, 0);//attach parent into shared memory
 	}
 
+	startTime = time(0);
+
 	while (currChildCount <= childProcessTotal)
 	{
 		createChildProcess(currChildCount);
 		currChildCount++;
+	}
+
+	while ((time(0) - startTime < time) && currChildSysCount > 0)
+	{
+		wait(NULL);
+		--currChildSysCount;
 	}
 
 	//release memory
