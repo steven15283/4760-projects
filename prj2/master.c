@@ -29,7 +29,7 @@ int currChildSysCount = 0;//sets the amount of children in the system
 
 enum state { idle, want_in, in_cs };//specifies the flags
 
-int status = 0 //used for the wait function when creating a child
+int status = 0; //used for the wait function when creating a child
 
 void createChildProcess(int num)//creates a child
 {
@@ -67,13 +67,15 @@ void spawnChild(int num)
 		{
 			(*parent) = getpid();//set the pid to parent to link all processes
 		}
-		setpgid(0, (*parent));//?
-		execl("./palin", "palin", to_string(num).c_str(), (char*)NULL);//executes palin with num as an argument
+		setpgid(0, (*parent));//sets(links) process group
+		char buf[1];//variable to save num into and send it through execl
+		sprintf(buf, "%d", num);
+		execl("./palin", "palin", buf, (char*)NULL);//executes palin with num as an argument
 		exit(0);
 	}
 }
 
-void  timeoutSignal(int sig)//timeout interrupt for timer
+void timeoutSignal(int sig)//timeout interrupt for timer
 {
 	if (time(0) - startTime >= time) //time(0) is the time right now,startTime is the time when we first created a child.This will get the time passed and compare to time
 	{
@@ -88,7 +90,7 @@ void  timeoutSignal(int sig)//timeout interrupt for timer
 
 	//release memory
 	shmdt(shmptr);//detach shared memory
-	shmctl(shmid, IPC_RMID, NULL);//?
+	shmctl(shmid, IPC_RMID, NULL);//remove from memory
 	printf("exiting master process");
 	exit(0);
 }
@@ -104,7 +106,7 @@ void sigHandler(int signal) //crtl^c handler
 
 	//release memory
 	shmdt(shmptr);//detach shared memory
-	shmctl(shmid, IPC_RMID, NULL);//?
+	shmctl(shmid, IPC_RMID, NULL);//remove from memory
 	printf("crtl^c interrupt:exiting master process");
 	exit(0);
 }
@@ -278,7 +280,7 @@ int main(int argc, char* argv[])
 
 	//release memory
 	shmdt(shmptr);//detach shared memory
-	shmctl(shmid, IPC_RMID, NULL);//?
+	shmctl(shmid, IPC_RMID, NULL);//remove from memory
 	exit(0);
 	
 
