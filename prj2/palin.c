@@ -90,7 +90,7 @@ void process(const int i)// critical section. int i is the index of array(so you
 			while (j != i)
 				j = (shmptr->flag[j] != idle) ? shmptr->turn : (j + 1) % n;//?
 			// Declare intention to enter critical section
-			printf("Process:%d - wants to enter CS\n", i);
+			fprintf(stderr,"Process:%d - wants to enter CS - \n", i);
 			flag[i] = in_cs;
 			// Check that no one else is in critical section
 			for (j = 0; j < n; j++)
@@ -98,7 +98,7 @@ void process(const int i)// critical section. int i is the index of array(so you
 					break;
 		} while (j < n) || (shmptr->turn != i && shmptr->flag[turn] != idle);//?
 
-		printf("Process:%d - entered CS\n", i);
+		fprintf(stderr,"Process:%d - entered CS\n", i);
 		shmptr->turn = i;// Assign turn to self and enter critical section
 
 		if (isPalindrome(shmptr->data[i]))
@@ -114,7 +114,7 @@ void process(const int i)// critical section. int i is the index of array(so you
 
 		// Exit section
 		j = (shmptr->turn + 1) % n;
-		printf("Process:%d - exited CS\n", i);
+		fprintf(stderr,"Process:%d - exited CS\n", i);
 		while (shmptr->flag[j] == idle)
 		{
 			j = (j + 1) % n;
