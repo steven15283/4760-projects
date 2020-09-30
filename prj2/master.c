@@ -6,10 +6,10 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
-#include<sys/shm.h>
+#include <sys/shm.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include<time.h>
+#include <time.h>
 #include <signal.h>
 //steven guo
 //9/20/2020
@@ -22,17 +22,18 @@ typedef struct {
 	int flag[MAXPROCESS];// array for flag
 	int turn;// number for turn
 	int numOfChild;//total number of children allowed
+	int timer;//user entered time for termination
+	clock_t startTime; // start timer to calculate the total time passed since processing
 } shared_memory;
 
 //global vars
 int childProcessTotal = 4;//sets default number of child processes master will create
 int maxChildInSystem = 2;//sets default number of child processes that can be in system at the same time
-int timer = 100; //sets default time
+timer = 100; //sets default time
 int currChildCount = 0;//sets the amount of children 
 int currChildSysCount = 0;//sets the amount of children in the system
 enum state { idle, want_in, in_cs };//specifies the flags
 int status = 0; //used for the wait function when creating a child
-clock_t startTime; // start timer to calculate the total time passed since processing
 
 
 void initSharedMemory();
@@ -40,12 +41,28 @@ void spawnChild(int num); //create child
 void createChildProcess(int num);//writes the log and makes sure there are only so many processes running at once
 void timeoutSignal(int sig);//timeout interrupt for timer
 void sigHandler(int signal); //crtl^c handler
+int calcTime();
 
+shared_memory* shmptr;
+pid_t* parent;
+int parentId;
+key_t parentKey;
+key_t key;
+int shmid;
+
+
+
+int calcTime()
+{
+	clock_t timeTaken = clock() - shmptr->startTime;
+	return (int)(((double)timeTaken) / CLOCKS_PER_SEC);
+
+}
 
 void initSharedMemory()
 {
-	key_t key = ftok("makefile", 'a');//unique key from ftok
-	int shmid = shmget(key, sizeof(shared_memory), (S_IRUSR | S_IWUSR | IPC_CREAT));//obtain access to a shared memory segment.
+	key = ftok("makefile", 'a');//unique key from ftok
+	shmid= shmget(key, sizeof(shared_memory), (S_IRUSR | S_IWUSR | IPC_CREAT));//obtain access to a shared memory segment.
 
 	if (shmid < 0)//check if shmget is able to access shared memory segment
 	{
@@ -53,13 +70,10 @@ void initSharedMemory()
 		exit(1);
 	}
 
-	shared_memory* shmptr = (shared_memory*)shmat(shmid, NULL, 0);// shmat to attach to shared memory
+	shmptr = (shared_memory*)shmat(shmid, NULL, 0);// shmat to attach to shared memory
 
 	//this is for later on when we have to terminate the parent due to time or when ^c is entered
-	key_t parentKey = ftok("makefile", 'b');
-	int parentId;
-	pid_t* parent;
-
+	parentKey = ftok("makefile", 'b');
 	parentId = shmget(parentKey, sizeof(pid_t), (IPC_CREAT | S_IRUSR | S_IWUSR));//allocate shared memory for parent id
 
 	if (parentId < 0)
@@ -86,7 +100,7 @@ void createChildProcess(int num)//writes the log and makes sure there are only s
 	if (currChildCount <= maxChildInSystem)//checks if the current processes running are less than the maximum running processes specified by user
 	{
 		spawnChild(num);//create another child
-		fprintf(log, "%d\t  %d\t %s\t \n", getppid(), num, shmptr->data[i]);
+		fprintf(log, "%d\t  %d\t %s\t \n", getppid(), num, shmptr->data[num]);
 	}
 	else
 	{//this means that the processes running at the moment is at max capacity and you have to wait for a child to be done to create another child
@@ -94,13 +108,13 @@ void createChildProcess(int num)//writes the log and makes sure there are only s
 		currChildSysCount--;//a child has changed state so another child can be created
 		printf("There are %d processes in the system\n", currChildSysCount);
 		spawnChild(num);//create another child
-		fprintf(log, "%d\t  %d\t %s\t \n", getppid(), num, shmptr->data[i]);
+		fprintf(log, "%d\t  %d\t %s\t \n", getppid(), num, shmptr->data[num]);
 	}
 
 	fclose(log);//close file
 }
 
-void spawnChild(int num)//create child
+void spawnChild(int num)//create child, num is index of array for the process
 {
 	currChildSysCount++;//increment the number of current children in system
 	if (fork() == 0)//create children
@@ -117,7 +131,7 @@ void spawnChild(int num)//create child
 
 void timeoutSignal(int sig)//timeout interrupt for timer
 {
-	if (clock() - startTime >= timer) //clock() is the time right now,startTime is the time when we first created a child.This will get the time passed and compare to time
+	if (calcTime() >= timer) //clock() is the time right now,startTime is the time when we first created a child.This will get the time passed and compare to time
 	{
 		printf("time has run out in master\n");
 		killpg((*parent), SIGUSR1);//kills all the processes linked to parent
@@ -126,13 +140,14 @@ void timeoutSignal(int sig)//timeout interrupt for timer
 		{
 			wait(NULL);
 		}
+		//release memory
+		shmdt(shmptr);//detach shared memory
+		shmctl(shmid, IPC_RMID, NULL);//remove from memory
+		printf("exiting master process");
+		exit(0);
 	}
 
-	//release memory
-	shmdt(shmptr);//detach shared memory
-	shmctl(shmid, IPC_RMID, NULL);//remove from memory
-	printf("exiting master process");
-	exit(0);
+	
 }
 
 void sigHandler(int signal) //crtl^c handler
@@ -178,7 +193,7 @@ int main(int argc, char* argv[])
 			return 0;
 		case 'n':
 			childProcessTotal = atoi(optarg);//gets user value of total child processes
-			if (childProcessTotal <= 0)
+			if (childProcessTotal < 0)
 			{
 				perror("maximum total of child process can not be <= 0");
 				return 1;
@@ -190,7 +205,7 @@ int main(int argc, char* argv[])
 			break;
 		case 's':
 			maxChildInSystem = atoi(optarg);//gets user value of maxChildInSystem
-			if (maxChildInSystem <= 0)
+			if (maxChildInSystem < 0)
 			{
 				perror(" the number of children allowed to exist in the system at the same time can not be <= 0");
 				return 1;
@@ -282,11 +297,12 @@ int main(int argc, char* argv[])
 			}
 		}		
 	}
+
 	childProcessTotal = i;//i is hard limited at 20 but if there are less process than the strings in the file, then it sets the number of processes to the number of strings
 	shmptr->numOfChild = childProcessTotal;//gets total number of childern and puts into struct to be shared through memory
 	
 
-	startTime = clock();//start the timer
+	shmptr->startTime = clock();//start the timer
 	printf("PID\t Index \t String\t");
 	while (currChildCount <= childProcessTotal)//loop to create the processes
 	{
@@ -294,7 +310,7 @@ int main(int argc, char* argv[])
 		currChildCount++;//each time a child is created increment currChildCount
 	}
 
-	while ((clock() - startTime < timer) && currChildSysCount > 0)//wait for all children to be finished with processing
+	while ((calcTime() < timer) && currChildSysCount > 0)//wait for all children to be finished with processing
 	{
 		wait(NULL);
 		--currChildSysCount;

@@ -8,7 +8,9 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
-#include <ctime>
+#include <time.h>
+#include <signal.h>
+
 //steven guo
 //9/20/2020
 
@@ -21,13 +23,35 @@ typedef struct {
 	int flag[MAXPROCESS];// array for flag
 	int turn;// number for turn
 	int numOfChild;//total number of children allowed
+	int timer;//user entered time for termination
+	clock_t startTime; // start timer to calculate the total time passed since processing
 } shared_memory;
 
 enum state { idle, want_in, in_cs };//specifies the flags
+shared_memory* shmptr;
+int shmid;
+int key;
+int indexNum = 0;
 
-bool isPalindrome(char str[])//checks if the string is a palindrome
+void terminateSig(int signal); //handles signal from parent to terminate on Ctrl+C
+void timeoutSig(int signal); //handles signlal from parent to terminate on timeout
+int calcTime();
+
+int calcTime()
 {
-	bool palindrome = true;//sets boolean to true
+	clock_t timeTaken = clock() - shmptr->startTime;
+	int convTimeTaken = (int)((double)timeTaken) / CLOCKS_PER_SEC;
+	if (convTimeTaken >= shmptr->)
+	{
+
+	}
+	return (int)((double)timeTaken) / CLOCKS_PER_SEC;
+
+}
+
+int isPalindrome(char str[])//checks if the string is a palindrome
+{
+	int palindrome = 0;//sets boolean to true
 	int lm = 0;//left most index
 	int rm = strlen(str) - 1;//right most index
 
@@ -35,16 +59,16 @@ bool isPalindrome(char str[])//checks if the string is a palindrome
 	{
 		if (str[lm++] != str[rm--])// if characters at the opposite ends are not equal then the string is not a palindrome
 		{
-			palindrome = false;
+			palindrome = 1;
 			break;
 		}
 	}
 	return palindrome;
 }
 
-void sortPalinOutput(char str[], bool palindrome)//sorts the palindrome into two files: palin.out and nopalin.out
+void sortPalinOutput(char str[], int palindrome)//sorts the palindrome into two files: palin.out and nopalin.out
 {
-	if (bool palindrome)// if palindrome is true then the string is a palindrome. output the string into the file
+	if (palindrome == 0)// if palindrome is true then the string is a palindrome. output the string into the file
 	{
 		FILE* palinYes = fopen("palin.out", "w");//make file called palin.out
 		if (palinYes == NULL)
@@ -54,7 +78,7 @@ void sortPalinOutput(char str[], bool palindrome)//sorts the palindrome into two
 			exit(1);
 		}
 
-		fputs(str[], palinYes);//write the string to file
+		fputs(str, palinYes);//write the string to file
 		fputs("\n", palinYes);//write a new line char for next string
 		fclose(palinYes);//close file
 
@@ -68,7 +92,7 @@ void sortPalinOutput(char str[], bool palindrome)//sorts the palindrome into two
 			perror("Failed to open file:nopalin.out");
 			exit(1);
 		}
-		fputs(str[], palinNo);//write the string to file
+		fputs(str, palinNo);//write the string to file
 		fputs("\n", palinNo);//write a new line char for next string
 		fclose(palinNo);//close file
 	}
@@ -79,7 +103,6 @@ void process(const int i)// critical section. int i is the index of array(so you
 {
 	int n = shmptr->numOfChild;// sets n equal to the total number of children
 	int j;
-
 	do
 	{
 		do
@@ -88,28 +111,28 @@ void process(const int i)// critical section. int i is the index of array(so you
 			shmptr->flag[i] = want_in; // Raise my flag
 			j = shmptr->turn; // Set local variable
 			while (j != i)
-				j = (shmptr->flag[j] != idle) ? shmptr->turn : (j + 1) % n;//?
+				j = (shmptr->flag[j] != idle) ? shmptr->turn : (j + 1) % n;
 			// Declare intention to enter critical section
-			fprintf(stderr,"Process:%d - wants to enter CS - \n", i);
-			flag[i] = in_cs;
+			fprintf(stderr,"Process:%d - wants to enter CS - %d\n", i, );
+			shmptr->flag[i] = in_cs;
 			// Check that no one else is in critical section
 			for (j = 0; j < n; j++)
-				if ((j != i) && (flag[j] == in_cs))//?
+				if ((j != i) && (shmptr->flag[j] == in_cs))
 					break;
-		} while (j < n) || (shmptr->turn != i && shmptr->flag[turn] != idle);//?
+		} while ((j < n) || (shmptr->turn != i) && (shmptr->flag[shmptr->turn] != idle));
 
 		fprintf(stderr,"Process:%d - entered CS\n", i);
 		shmptr->turn = i;// Assign turn to self and enter critical section
 
-		if (isPalindrome(shmptr->data[i]))
+		if (isPalindrome(shmptr->data[i]) == 0)
 		{
 			sleep(rand() % 3);//0-2 second delay
-			sortPalinOutput(shmptr->data[i], true)//sort the string
+			sortPalinOutput(shmptr->data[i], 0);//sort the string
 		}
 		else
 		{
 			sleep(rand() % 3);//0-2 second delay
-			sortPalinOutput(shmptr->data[i], false)//sort the string
+			sortPalinOutput(shmptr->data[i], 1);//sort the string
 		}
 
 		// Exit section
@@ -123,16 +146,37 @@ void process(const int i)// critical section. int i is the index of array(so you
 		// Assign turn to next waiting process; change own flag to idle
 		shmptr->turn = j;
 		shmptr->flag[i] = idle;
+
 		kill(getppid(), SIGUSR2);
+
 	} while (1);
+}
+
+void terminateSig(int signal) 
+{
+	if (signal == SIGTERM) 
+	{
+		printf("crtl^c interrupt:exiting process:%d\n", indexNum);
+		exit(1);
+	}
+}
+
+void timeoutSig(int signal) 
+{
+	if (signal == SIGUSR1) 
+	{
+		printf("process %d:exiting master process\n", indexNum);
+		exit(0);
+	}
 }
 
 int main(int argc, char* argv[])
 {
-	int index = atoi(argv[1]);//gets index number which is sent in by cmd line argument
-	int key = ftok("makefile", 'a');//unique key from ftok
-	int shmid = shmget(key, sizeof(shared_memory), (S_IRUSR | S_IWUSR | IPC_CREAT);//obtain access to a shared memory segment.
-
+	
+	indexNum = atoi(argv[1]);//gets index number which is sent in by cmd line argument
+	key = ftok("makefile", 'a');//unique key from ftok
+	shmid = shmget(key, sizeof(shared_memory), (S_IRUSR | S_IWUSR | IPC_CREAT));//obtain access to a shared memory segment.
+	
 	if (shmid < 0)
 	{
 		perror("shmget error");
@@ -140,10 +184,10 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		shared_memory* shmptr = (shared_memory*)shmat(shmid, NULL, 0);// shmat to attach to shared memory
+		shmptr = (shared_memory*)shmat(shmid, NULL, 0);// shmat to attach to shared memory
 	}
 	
-	process(index);// runs critical section
+	process(indexNum);// runs critical section
 	return 0;
 }
 
