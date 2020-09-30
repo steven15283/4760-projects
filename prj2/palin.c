@@ -13,27 +13,27 @@
 //9/20/2020
 
 
-#define LENGTH 255
-#define MAXPROCESS 20
+#define LENGTH 256 //max number of characters in a string
+#define MAXPROCESS 20 //max number of processes
 
 typedef struct {
-	char data[MAXPROCESS][LENGTH];
-	int flag[MAXPROCESS];
-	int turn;
-	int numOfChild;
+	char data[MAXPROCESS][LENGTH]; //array of strings to check if its a palindrome
+	int flag[MAXPROCESS];// array for flag
+	int turn;// number for turn
+	int numOfChild;//total number of children allowed
 } shared_memory;
 
-enum state { idle, want_in, in_cs };
+enum state { idle, want_in, in_cs };//specifies the flags
 
-bool isPalindrome(char str[])
+bool isPalindrome(char str[])//checks if the string is a palindrome
 {
-	bool palindrome = true;
+	bool palindrome = true;//sets boolean to true
 	int lm = 0;//left most index
 	int rm = strlen(str) - 1;//right most index
 
-	while (rm > lm)
+	while (rm > lm)//this while loop checks both ends of the string,working its way to the middle to check if its a palindrome
 	{
-		if (str[lm++] != str[rm--])
+		if (str[lm++] != str[rm--])// if characters at the opposite ends are not equal then the string is not a palindrome
 		{
 			palindrome = false;
 			break;
@@ -42,42 +42,42 @@ bool isPalindrome(char str[])
 	return palindrome;
 }
 
-void sortPalinOutput(char str[], bool palindrome)
+void sortPalinOutput(char str[], bool palindrome)//sorts the palindrome into two files: palin.out and nopalin.out
 {
-	if (bool palindrome)
+	if (bool palindrome)// if palindrome is true then the string is a palindrome. output the string into the file
 	{
-		FILE* palinYes = fopen("palin.out", "w");
+		FILE* palinYes = fopen("palin.out", "w");//make file called palin.out
 		if (palinYes == NULL)
 		{
 			/* File not created hence exit */
 			perror("Failed to open file:palin.out");
-			exit(EXIT_FAILURE);
+			exit(1);
 		}
 
-		fputs(str[], palinYes);
-		fputs("\n", palinYes);
-		fclose(palinYes);
+		fputs(str[], palinYes);//write the string to file
+		fputs("\n", palinYes);//write a new line char for next string
+		fclose(palinYes);//close file
 
 	}
 	else
 	{
-		FILE* palinNo = fopen("nopalin.out", "w");
+		FILE* palinNo = fopen("nopalin.out", "w");//make file called nopalin.out
 		if (palinNo == NULL)
 		{
 			/* File not created hence exit */
 			perror("Failed to open file:nopalin.out");
-			exit(EXIT_FAILURE);
+			exit(1);
 		}
-		fputs(str[], palinNo);
-		fputs("\n", palinNo);
-		fclose(palinNo);
+		fputs(str[], palinNo);//write the string to file
+		fputs("\n", palinNo);//write a new line char for next string
+		fclose(palinNo);//close file
 	}
 
 }
 
-void process(const int i)
+void process(const int i)// critical section. int i is the index of array(so you can get the right string from array)
 {
-	int n = shmptr->numOfChild;
+	int n = shmptr->numOfChild;// sets n equal to the total number of children
 	int j;
 
 	do
@@ -88,27 +88,30 @@ void process(const int i)
 			shmptr->flag[i] = want_in; // Raise my flag
 			j = shmptr->turn; // Set local variable
 			while (j != i)
-				j = (shmptr->flag[j] != idle) ? shmptr->turn : (j + 1) % n;
+				j = (shmptr->flag[j] != idle) ? shmptr->turn : (j + 1) % n;//?
 			// Declare intention to enter critical section
 			printf("Process:%d - wants to enter CS\n", i);
 			flag[i] = in_cs;
 			// Check that no one else is in critical section
 			for (j = 0; j < n; j++)
-				if ((j != i) && (flag[j] == in_cs))
+				if ((j != i) && (flag[j] == in_cs))//?
 					break;
-		} while (j < n) || (shmptr->turn != i && shmptr->flag[turn] != idle);
+		} while (j < n) || (shmptr->turn != i && shmptr->flag[turn] != idle);//?
+
 		printf("Process:%d - entered CS\n", i);
 		shmptr->turn = i;// Assign turn to self and enter critical section
+
 		if (isPalindrome(shmptr->data[i]))
 		{
-			sleep(rand() % 3);
-			sortPalinOutput(shmptr->data[i], true)
+			sleep(rand() % 3);//0-2 second delay
+			sortPalinOutput(shmptr->data[i], true)//sort the string
 		}
 		else
 		{
-			sleep(rand() % 3);
-			sortPalinOutput(shmptr->data[i], false)
+			sleep(rand() % 3);//0-2 second delay
+			sortPalinOutput(shmptr->data[i], false)//sort the string
 		}
+
 		// Exit section
 		j = (shmptr->turn + 1) % n;
 		printf("Process:%d - exited CS\n", i);
@@ -126,11 +129,9 @@ void process(const int i)
 
 int main(int argc, char* argv[])
 {
-	int index = atoi(argv[1]);
-
-	int key = ftok("Makefile", 'a');
-
-	int shmid = shmget(key, sizeof(shared_memory), (S_IRUSR | S_IWUSR | IPC_CREAT);
+	int index = atoi(argv[1]);//gets index number which is sent in by cmd line argument
+	int key = ftok("makefile", 'a');//unique key from ftok
+	int shmid = shmget(key, sizeof(shared_memory), (S_IRUSR | S_IWUSR | IPC_CREAT);//obtain access to a shared memory segment.
 
 	if (shmid < 0)
 	{
@@ -142,7 +143,7 @@ int main(int argc, char* argv[])
 		shared_memory* shmptr = (shared_memory*)shmat(shmid, NULL, 0);// shmat to attach to shared memory
 	}
 	
-	process(index);
+	process(index);// runs critical section
 	return 0;
 }
 
