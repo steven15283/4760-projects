@@ -30,8 +30,9 @@ typedef struct {
 int childProcessTotal = 4;//sets default number of child processes master will create
 int maxChildInSystem = 2;//sets default number of child processes that can be in system at the same time
 timer = 100; //sets default time
-int currChildCount = 0;//sets the amount of children 
-int currChildSysCount = 0;//sets the amount of children in the system
+int currChildCount = 0;//counts the amount of children 
+int currChildSysCount = 0;//counts the amount of children in the system
+int totalNumOfProcesses = 0;
 enum state { idle, want_in, in_cs };//specifies the flags
 int status = 0; //used for the wait function when creating a child
 
@@ -89,18 +90,12 @@ void initSharedMemory()
 
 void createChildProcess(int num)//writes the log and makes sure there are only so many processes running at once
 {
-	FILE* log = fopen("output.log", "w");//make file called output.log
-	if (log == NULL)
-	{
-		/* File not created hence exit */
-		perror("Failed to open file:output.log");
-		exit(1);
-	}
+	
 
 	if (currChildCount <= maxChildInSystem)//checks if the current processes running are less than the maximum running processes specified by user
 	{
 		spawnChild(num);//create another child
-		fprintf(log, "%d\t  %d\t %s\t \n", getppid(), num, shmptr->data[num]);
+		fprintf(log, "%d\t  %d\t %s\t %d\t\n", getppid(), num, shmptr->data[num], calcTime());
 	}
 	else
 	{//this means that the processes running at the moment is at max capacity and you have to wait for a child to be done to create another child
@@ -108,7 +103,7 @@ void createChildProcess(int num)//writes the log and makes sure there are only s
 		currChildSysCount--;//a child has changed state so another child can be created
 		printf("There are %d processes in the system\n", currChildSysCount);
 		spawnChild(num);//create another child
-		fprintf(log, "%d\t  %d\t %s\t \n", getppid(), num, shmptr->data[num]);
+		fprintf(log, "%d\t  %d\t %s\t %d\t\n", getppid(), num, shmptr->data[num], calcTime());
 	}
 
 	fclose(log);//close file
@@ -162,7 +157,7 @@ void sigHandler(int signal) //crtl^c handler
 	//release memory
 	shmdt(shmptr);//detach shared memory
 	shmctl(shmid, IPC_RMID, NULL);//remove from memory
-	printf("crtl^c interrupt:exiting master process");
+	printf("crtl^c interrupt:exiting master process - %d", calcTime());
 	exit(0);
 }
 
@@ -303,11 +298,21 @@ int main(int argc, char* argv[])
 	
 
 	shmptr->startTime = clock();//start the timer
-	printf("PID\t Index \t String\t");
+	printf("PID\t Index \t String\t \t Time\t");
+
+	FILE* log = fopen("output.log", "w");//make file called output.log
+	if (log == NULL)
+	{
+		/* File not created hence exit */
+		perror("Failed to open file:output.log");
+		exit(1);
+	}
+
 	while (currChildCount <= childProcessTotal)//loop to create the processes
 	{
-		createChildProcess(currChildCount);//create child
+		createChildProcess(totalNumOfProcesses);//create child
 		currChildCount++;//each time a child is created increment currChildCount
+		totalNumOfProcesses++;
 	}
 
 	while ((calcTime() < timer) && currChildSysCount > 0)//wait for all children to be finished with processing

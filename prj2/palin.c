@@ -40,14 +40,10 @@ int calcTime();
 int calcTime()
 {
 	clock_t timeTaken = clock() - shmptr->startTime;
-	int convTimeTaken = (int)((double)timeTaken) / CLOCKS_PER_SEC;
-	if (convTimeTaken >= shmptr->)
-	{
-
-	}
 	return (int)((double)timeTaken) / CLOCKS_PER_SEC;
-
 }
+
+
 
 int isPalindrome(char str[])//checks if the string is a palindrome
 {
@@ -113,7 +109,7 @@ void process(const int i)// critical section. int i is the index of array(so you
 			while (j != i)
 				j = (shmptr->flag[j] != idle) ? shmptr->turn : (j + 1) % n;
 			// Declare intention to enter critical section
-			fprintf(stderr,"Process:%d - wants to enter CS - %d\n", i, );
+			fprintf(stderr,"Process:%d - wants to enter CS - %d\n", i, calcTime());
 			shmptr->flag[i] = in_cs;
 			// Check that no one else is in critical section
 			for (j = 0; j < n; j++)
@@ -121,7 +117,7 @@ void process(const int i)// critical section. int i is the index of array(so you
 					break;
 		} while ((j < n) || (shmptr->turn != i) && (shmptr->flag[shmptr->turn] != idle));
 
-		fprintf(stderr,"Process:%d - entered CS\n", i);
+		fprintf(stderr,"Process:%d - entered CS - %d\n", i, calcTime());
 		shmptr->turn = i;// Assign turn to self and enter critical section
 
 		if (isPalindrome(shmptr->data[i]) == 0)
@@ -137,7 +133,7 @@ void process(const int i)// critical section. int i is the index of array(so you
 
 		// Exit section
 		j = (shmptr->turn + 1) % n;
-		fprintf(stderr,"Process:%d - exited CS\n", i);
+		fprintf(stderr,"Process:%d - exited CS - %d\n", i, calcTime());
 		while (shmptr->flag[j] == idle)
 		{
 			j = (j + 1) % n;
@@ -156,7 +152,7 @@ void terminateSig(int signal)
 {
 	if (signal == SIGTERM) 
 	{
-		printf("crtl^c interrupt:exiting process:%d\n", indexNum);
+		printf("crtl^c interrupt:exiting process:%d - %d\n", indexNum, calcTime());
 		exit(1);
 	}
 }
@@ -165,7 +161,7 @@ void timeoutSig(int signal)
 {
 	if (signal == SIGUSR1) 
 	{
-		printf("process %d:exiting master process\n", indexNum);
+		printf("process %d: Timed out, exiting master process - %d\n", indexNum, calcTime());
 		exit(0);
 	}
 }
