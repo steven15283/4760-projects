@@ -22,17 +22,16 @@ typedef struct {
 	int flag[MAXPROCESS];// array for flag
 	int turn;// number for turn
 	int numOfChild;//total number of children allowed
-	int timer;//user entered time for termination
+	double timer;//user entered time for termination
 	clock_t startTime; // start timer to calculate the total time passed since processing
 } shared_memory;
 
 //global vars
 int childProcessTotal = 4;//sets default number of child processes master will create
 int maxChildInSystem = 2;//sets default number of child processes that can be in system at the same time
-timer = 100; //sets default time
+double maxTime = 100; //sets default time
 int currChildCount = 0;//counts the amount of children 
 int currChildSysCount = 0;//counts the amount of children in the system
-int totalNumOfProcesses = 0;
 enum state { idle, want_in, in_cs };//specifies the flags
 int status = 0; //used for the wait function when creating a child
 
@@ -40,9 +39,9 @@ int status = 0; //used for the wait function when creating a child
 void initSharedMemory();
 void spawnChild(int num); //create child
 void createChildProcess(int num);//writes the log and makes sure there are only so many processes running at once
-void timeoutSignal(int sig);//timeout interrupt for timer
+void timeoutSignal(int signal);//timeout interrupt for timer
 void sigHandler(int signal); //crtl^c handler
-int calcTime();
+double calcTime();
 
 shared_memory* shmptr;
 pid_t* parent;
@@ -53,10 +52,10 @@ int shmid;
 
 
 
-int calcTime()
+double calcTime()
 {
 	clock_t timeTaken = clock() - shmptr->startTime;
-	return (int)(((double)timeTaken) / CLOCKS_PER_SEC);
+	return (((double)timeTaken) / CLOCKS_PER_SEC);
 
 }
 
@@ -92,10 +91,9 @@ void createChildProcess(int num)//writes the log and makes sure there are only s
 {
 	
 
-	if (currChildCount <= maxChildInSystem)//checks if the current processes running are less than the maximum running processes specified by user
+	if (currChildSysCount <= maxChildInSystem)//checks if the current processes running are less than the maximum running processes specified by user
 	{
 		spawnChild(num);//create another child
-		fprintf(log, "%d\t  %d\t %s\t %d\t\n", getppid(), num, shmptr->data[num], calcTime());
 	}
 	else
 	{//this means that the processes running at the moment is at max capacity and you have to wait for a child to be done to create another child
@@ -103,10 +101,9 @@ void createChildProcess(int num)//writes the log and makes sure there are only s
 		currChildSysCount--;//a child has changed state so another child can be created
 		printf("There are %d processes in the system\n", currChildSysCount);
 		spawnChild(num);//create another child
-		fprintf(log, "%d\t  %d\t %s\t %d\t\n", getppid(), num, shmptr->data[num], calcTime());
 	}
 
-	fclose(log);//close file
+	
 }
 
 void spawnChild(int num)//create child, num is index of array for the process
@@ -114,19 +111,22 @@ void spawnChild(int num)//create child, num is index of array for the process
 	currChildSysCount++;//increment the number of current children in system
 	if (fork() == 0)//create children
 	{
-		if (num == 1) //this means that the process is a parent
+		if (num == 0) //this means that the process is a parent
 		{
 			(*parent) = getpid();//set the pid to parent
 		}
 		setpgid(0, (*parent));//sets(links) process group
-		execlp("palin", "palin", num, NULL);//executes palin with num as an argument
+		printf("before exec, num = %d\n", num);
+		char buf[256];
+		sprintf(buf, "%d", num);
+		execlp("./palin", "palin", buf, NULL);//executes palin with num as an argument
 		exit(0);
 	}
 }
 
-void timeoutSignal(int sig)//timeout interrupt for timer
+void timeoutSignal(int signal)//timeout interrupt for timer
 {
-	if (calcTime() >= timer) //clock() is the time right now,startTime is the time when we first created a child.This will get the time passed and compare to time
+	if (calcTime() >= maxTime) //clock() is the time right now,startTime is the time when we first created a child.This will get the time passed and compare to time
 	{
 		printf("time has run out in master\n");
 		killpg((*parent), SIGUSR1);//kills all the processes linked to parent
@@ -157,7 +157,7 @@ void sigHandler(int signal) //crtl^c handler
 	//release memory
 	shmdt(shmptr);//detach shared memory
 	shmctl(shmid, IPC_RMID, NULL);//remove from memory
-	printf("crtl^c interrupt:exiting master process - %d", calcTime());
+	printf("crtl^c interrupt:exiting master process - %d", clock());
 	exit(0);
 }
 
@@ -207,8 +207,8 @@ int main(int argc, char* argv[])
 			}
 			break;
 		case 't':
-			timer = atoi(optarg);//gets user value of time
-			if (timer <= 0)
+			maxTime = atoi(optarg);//gets user value of time
+			if (maxTime <= 0)
 			{
 				perror("time can not be <= 0");
 				return 1;
@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	
+	shmptr->timer = maxTime;
 	
 	
 
@@ -242,65 +242,29 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "File %s not found\n", argv[1]);
 		exit(1);
 	}
-	c = fgetc(fptr);//gets a single char from the file
-
-	if (isalpha(c))//check if its a letter or digit
-	{
-		line[count] = c;
-		count++;
-	}
-	else if(isspace(c))// if it is a space do nothing
-	{
-
-	}
-	else// if its a special character do nothing
-	{
-
-	}
-	//puts each character from each line into line char array then puts into 2d array when \n ==c
+	
+	
 	int i = 0;
-	while (c != EOF)//while loop until EOF
+	
+	while (fgets(line, sizeof(line), fptr)) 
 	{
-		if(i==20)//hard limit for hsared array 20 processes = 20 strings
+		if (i == 20)//hard limit for hsared array 20 processes = 20 strings
 		{
 			break;
 		}
-		c = fgetc(fptr);
-		if (isalpha(c))
-		{
-			line[count] = c;
-			count++;
-		}
-		else if (isdigit(c))
-		{
-			line[count] = c;
-			count++;
-		}
-		else if (isspace(c))
-		{
-
-		}
-		else
-		{
-			if (c == '\n')// if its a new line
-			{
-				line[count] = c;
-				strcpy(shmptr->data[i], line);//puts the string into 2d array
-				char line[LENGTH];//reset array for next line
-				count = 0;//set count to 0 for the new string about to be read in
-				i++;//increment index for 2d array
-			}
-		}		
+		line[strlen(line) - 1] = '\0';
+		strcpy(shmptr->data[i], line);
+		i++;
 	}
-
 	childProcessTotal = i;//i is hard limited at 20 but if there are less process than the strings in the file, then it sets the number of processes to the number of strings
 	shmptr->numOfChild = childProcessTotal;//gets total number of childern and puts into struct to be shared through memory
 	
 
 	shmptr->startTime = clock();//start the timer
-	printf("PID\t Index \t String\t \t Time\t");
+	
 
 	FILE* log = fopen("output.log", "w");//make file called output.log
+	fprintf(log,"PID\t Index\t String\t Time\t\n");
 	if (log == NULL)
 	{
 		/* File not created hence exit */
@@ -310,16 +274,16 @@ int main(int argc, char* argv[])
 
 	while (currChildCount <= childProcessTotal)//loop to create the processes
 	{
-		createChildProcess(totalNumOfProcesses);//create child
+		createChildProcess(currChildCount);//create child
+		fprintf(log, "%d\t  %d\t %s\t %d\t\n", getpid(), currChildCount, shmptr->data[currChildCount], clock());
 		currChildCount++;//each time a child is created increment currChildCount
-		totalNumOfProcesses++;
 	}
-
-	while ((calcTime() < timer) && currChildSysCount > 0)//wait for all children to be finished with processing
+	fclose(log);//close file
+	while ((calcTime() < maxTime) && currChildSysCount > 0)//wait for all children to be finished with processing
 	{
 		wait(NULL);
 		--currChildSysCount;
-		printf("Processes in system:%d", currChildSysCount);
+		printf("Processes in system:%d\n", currChildSysCount);
 	}
 
 	//release memory

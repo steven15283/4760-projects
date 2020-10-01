@@ -23,7 +23,7 @@ typedef struct {
 	int flag[MAXPROCESS];// array for flag
 	int turn;// number for turn
 	int numOfChild;//total number of children allowed
-	int timer;//user entered time for termination
+	double timer;//user entered time for termination
 	clock_t startTime; // start timer to calculate the total time passed since processing
 } shared_memory;
 
@@ -97,62 +97,65 @@ void sortPalinOutput(char str[], int palindrome)//sorts the palindrome into two 
 
 void process(const int i)// critical section. int i is the index of array(so you can get the right string from array)
 {
+	printf("Process:%d - wants to enter CS - %d\n", i, calcTime());
+
 	int n = shmptr->numOfChild;// sets n equal to the total number of children
 	int j;
 	do
 	{
-		do
-		{
 			
-			shmptr->flag[i] = want_in; // Raise my flag
-			j = shmptr->turn; // Set local variable
-			while (j != i)
-				j = (shmptr->flag[j] != idle) ? shmptr->turn : (j + 1) % n;
-			// Declare intention to enter critical section
-			fprintf(stderr,"Process:%d - wants to enter CS - %d\n", i, calcTime());
-			shmptr->flag[i] = in_cs;
-			// Check that no one else is in critical section
-			for (j = 0; j < n; j++)
-				if ((j != i) && (shmptr->flag[j] == in_cs))
-					break;
-		} while ((j < n) || (shmptr->turn != i) && (shmptr->flag[shmptr->turn] != idle));
-
-		fprintf(stderr,"Process:%d - entered CS - %d\n", i, calcTime());
-		shmptr->turn = i;// Assign turn to self and enter critical section
-
-		if (isPalindrome(shmptr->data[i]) == 0)
-		{
-			sleep(rand() % 3);//0-2 second delay
-			sortPalinOutput(shmptr->data[i], 0);//sort the string
+		shmptr->flag[i] = want_in; // Raise my flag
+		j = shmptr->turn; // Set local variable
+		while (j != i)
+			j = (shmptr->flag[j] != idle) ? shmptr->turn : (j + 1) % n;
+		// Declare intention to enter critical section
+		
+		shmptr->flag[i] = in_cs;
+		// Check that no one else is in critical section
+		for (j = 0; j < n; j++)
+		{ 
+			if ((j != i) && (shmptr->flag[j] == in_cs))
+			{
+				break;
+			}
 		}
-		else
-		{
-			sleep(rand() % 3);//0-2 second delay
-			sortPalinOutput(shmptr->data[i], 1);//sort the string
-		}
+				
+	} while ((j < n) || (shmptr->turn != i) && (shmptr->flag[shmptr->turn] != idle));
 
-		// Exit section
-		j = (shmptr->turn + 1) % n;
-		fprintf(stderr,"Process:%d - exited CS - %d\n", i, calcTime());
-		while (shmptr->flag[j] == idle)
-		{
-			j = (j + 1) % n;
-		}
+	printf("Process:%d - entered CS - %d\n", i, calcTime());
+	shmptr->turn = i;// Assign turn to self and enter critical section
 
-		// Assign turn to next waiting process; change own flag to idle
-		shmptr->turn = j;
-		shmptr->flag[i] = idle;
+	if (isPalindrome(shmptr->data[i]) == 0)
+	{
+		sleep(rand() % 3);//0-2 second delay
+		sortPalinOutput(shmptr->data[i], 0);//sort the string
+	}
+	else
+	{
+		sleep(rand() % 3);//0-2 second delay
+		sortPalinOutput(shmptr->data[i], 1);//sort the string
+	}
 
-		kill(getppid(), SIGUSR2);
+	// Exit section
+	j = (shmptr->turn + 1) % n;
+	printf("Process:%d - exited CS - %d\n", i, calcTime());
+	while (shmptr->flag[j] == idle)
+	{
+		j = (j + 1) % n;
+	}
 
-	} while (1);
+	// Assign turn to next waiting process; change own flag to idle
+	shmptr->turn = j;
+	shmptr->flag[i] = idle;
+	printf("before killing process: %d", i);
+	kill(getppid(), SIGUSR2);
 }
 
 void terminateSig(int signal) 
 {
 	if (signal == SIGTERM) 
 	{
-		printf("crtl^c interrupt:exiting process:%d - %d\n", indexNum, calcTime());
+		printf("interrupt:exiting process:%d - %d\n", indexNum, calcTime());
 		exit(1);
 	}
 }
@@ -168,7 +171,6 @@ void timeoutSig(int signal)
 
 int main(int argc, char* argv[])
 {
-	
 	indexNum = atoi(argv[1]);//gets index number which is sent in by cmd line argument
 	key = ftok("makefile", 'a');//unique key from ftok
 	shmid = shmget(key, sizeof(shared_memory), (S_IRUSR | S_IWUSR | IPC_CREAT));//obtain access to a shared memory segment.
@@ -183,7 +185,8 @@ int main(int argc, char* argv[])
 		shmptr = (shared_memory*)shmat(shmid, NULL, 0);// shmat to attach to shared memory
 	}
 	
-	process(indexNum);// runs critical section
+	printf("HERE %d\n", indexNum);
+	//process(indexNum);// runs critical section
 	return 0;
 }
 
