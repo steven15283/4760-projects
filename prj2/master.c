@@ -27,20 +27,21 @@ typedef struct {
 //global vars
 int childProcessTotal = 4;//sets default number of child processes master will create
 int maxChildInSystem = 2;//sets default number of child processes that can be in system at the same time
-int maxTime = 100; //sets default time
+double maxTime = 100.00; //sets default time
 int currChildCount = 0;//counts the amount of children 
 int currChildSysCount = 0;//counts the amount of children in the system
 enum state { idle, want_in, in_cs };//specifies the flags
 int status = 0; //used for the wait function when creating a child
-time_t startTime;
+time_t startTime, currTime; //declared to be used with all functions
 
 void initSharedMemory();
 void spawnChild(int num); //create child
 void createChildProcess(int num);//writes the log and makes sure there are only so many processes running at once
 void timeoutSignal(int signal);//timeout interrupt for timer
 void sigHandler(int signal); //crtl^c handler
-char* printTime();
+char* printTime();//prints the current time
 
+//needed to be declared to be used with all functions
 shared_memory* shmptr;
 pid_t* parent;
 int parentId;
@@ -51,7 +52,7 @@ int shmid;
 
 
 
-char* printTime()
+char* printTime()//prints out current time
 {
 	time_t t;
 	time(&t);
@@ -122,14 +123,16 @@ void spawnChild(int num)//create child, num is index of array for the process
 		exit(0);
 	}
 }
-/////////////////////////////////////////((int)difftime(printTime(), startTime))
+
+
 void timeoutSignal(int signal)//timeout interrupt for timer
 {
-	if (1 >= maxTime) //
+	time(&currTime);//get current time
+	if (difftime(currTime, startTime) >= maxTime) //if time is up
 	{
 		printf("time has run out in master\n");
 		killpg((*parent), SIGUSR1);//kills all the processes linked to parent
-		int i;
+		int i;//initialize i for forloop
 		for (i = 0; i < currChildSysCount; i++)//CHECK TO SEE IF PROCESSES HAVE EXITED with waitpid and sigkill
 		{
 			wait(NULL);
@@ -147,8 +150,8 @@ void timeoutSignal(int signal)//timeout interrupt for timer
 void sigHandler(int signal) //crtl^c handler
 {
 	killpg((*parent), SIGTERM);//kills all the processes linked to parent 
-	int i;
-	for (i = 0; i < currChildSysCount; i++)//?
+	int i;//initialize i for forloop
+	for (i = 0; i < currChildSysCount; i++)//while there is still children running wait until they finish
 	{
 		wait(NULL);
 	}
@@ -239,7 +242,7 @@ int main(int argc, char* argv[])
 	}
 	
 	
-	int i = 0;
+	int i = 0;//initiaize i 
 	
 	while (fgets(line, sizeof(line), fptr)) 
 	{
@@ -247,9 +250,9 @@ int main(int argc, char* argv[])
 		{
 			break;
 		}
-		line[strlen(line) - 1] = '\0';
-		strcpy(shmptr->data[i], line);
-		i++;
+		line[strlen(line) - 1] = '\0';//adds null char to the end of each string
+		strcpy(shmptr->data[i], line);//copys string into array
+		i++;//increment i for index of array
 	}
 	childProcessTotal = i;//i is hard limited at 20 but if there are less process than the strings in the file, then it sets the number of processes to the number of strings
 	shmptr->numOfChild = childProcessTotal;//gets total number of childern and puts into struct to be shared through memory
@@ -275,8 +278,8 @@ int main(int argc, char* argv[])
 	}
 	fclose(log);//close file
 
-	///////////////////////fix calcTime //(int)(difftime(printTime(), startTime))
-	while (( 0 < maxTime) && currChildSysCount > 0)//wait for all children to be finished with processing
+	time(&currTime);//gets current time
+	while (((difftime(currTime, startTime)) < maxTime) && currChildSysCount > 0)//wait for all children to be finished with processing
 	{
 		wait(NULL);
 		--currChildSysCount;

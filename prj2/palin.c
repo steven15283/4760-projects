@@ -26,14 +26,14 @@ typedef struct {
 } shared_memory;
 
 enum state { idle, want_in, in_cs };//specifies the flags
+
+//needed to be declared to be used with all functions
 shared_memory* shmptr;
 int shmid;
 int key;
 int indexNum = 0;
 
-void terminateSig(int signal); //handles signal from parent to terminate on Ctrl+C
-void timeoutSig(int signal); //handles signlal from parent to terminate on timeout
-char* printTime();
+char* printTime();//prints the current time
 
 
 
@@ -48,7 +48,7 @@ int isPalindrome(char str[])//checks if the string is a palindrome
 	{
 		if (str[lm++] != str[rm--])// if characters at the opposite ends are not equal then the string is not a palindrome
 		{
-			palindrome = 1;
+			palindrome = 1;//1 means its not a palindrome
 			break;
 		}
 	}
@@ -108,7 +108,7 @@ void process(const int i)// critical section. int i is the index of array(so you
 		
 		for (j = 0; j < n; j++)// Check that no one else is in critical section
 		{ 
-			if ((j != i) && (shmptr->flag[j] == in_cs))
+			if ((j != i) && (shmptr->flag[j] == in_cs))//if its not our turn and if our flag is in_cs
 			{
 				break;
 			}
@@ -132,7 +132,7 @@ void process(const int i)// critical section. int i is the index of array(so you
 
 	// Exit critical section
 	printf("Process:%d - exited CS - %s\n", i, printTime());
-	j = (shmptr->turn + 1) % n;
+	j = (shmptr->turn + 1) % n;//find whatever process is next
 	
 	while (shmptr->flag[j] == idle)
 	{
@@ -143,32 +143,14 @@ void process(const int i)// critical section. int i is the index of array(so you
 	shmptr->turn = j;
 	shmptr->flag[i] = idle; //change own flag to idle
 	//printf("before killing process: %d\n", i);
-	kill(getppid(), SIGUSR2);
+	kill(getppid(), SIGUSR2);//kills process
 }
 
-void terminateSig(int signal) 
-{
-	if (signal == SIGTERM) 
-	{
-		printf("interrupt:exiting process:%d - %s\n", indexNum, printTime());
-		exit(1);
-	}
-}
-
-char* printTime()
+char* printTime()//prints current time
 {
 	time_t t;
-	time(&t);
-	return ctime(&t);
-}
-
-void timeoutSig(int signal) 
-{
-	if (signal == SIGUSR1) 
-	{
-		printf("process %d: Timed out, exiting master process - %s\n", indexNum, printTime());
-		exit(0);
-	}
+	time(&t);//records current time
+	return ctime(&t);//returns the string format 
 }
 
 int main(int argc, char* argv[])
@@ -177,7 +159,7 @@ int main(int argc, char* argv[])
 	key = ftok("makefile", 'a');//unique key from ftok
 	shmid = shmget(key, sizeof(shared_memory), (S_IRUSR | S_IWUSR | IPC_CREAT));//obtain access to a shared memory segment.
 	
-	if (shmid < 0)
+	if (shmid < 0)//unable to obtain access to a shared memory segment.
 	{
 		perror("shmget error");
 		exit(1);
