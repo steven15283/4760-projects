@@ -10,7 +10,6 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <signal.h>
-#include <ctype.h>
 
 //steven guo
 //9/20/2020
@@ -47,7 +46,7 @@ int isPalindrome(char str[])//checks if the string is a palindrome
 
 	while (rm > lm)//this while loop checks both ends of the string,working its way to the middle to check if its a palindrome
 	{
-		if (tolower(str[lm++]) != tolower(str[rm--]))// if characters at the opposite ends are not equal then the string is not a palindrome
+		if (str[lm++] != str[rm--])// if characters at the opposite ends are not equal then the string is not a palindrome
 		{
 			palindrome = 1;//1 means its not a palindrome
 			break;
