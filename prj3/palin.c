@@ -15,7 +15,17 @@
 //steven guo
 //9/20/2020
 
+//use smget,msgget, msgsnd,msgrcv
 
+/*
+Semaphore Solution to the Critical Selection Problem
+repeat
+wait(mutex);
+critical section
+signal(mutex);
+remainder section
+until false;
+*/
 #define LENGTH 256 //max number of characters in a string
 #define MAXPROCESS 20 //max number of processes
 
