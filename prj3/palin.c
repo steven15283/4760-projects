@@ -11,28 +11,20 @@
 #include <time.h>
 #include <signal.h>
 #include <ctype.h>
+#include <semaphore.h>
 
 //steven guo
-//9/20/2020
+//10/4/2020
 
-//use smget,msgget, msgsnd,msgrcv
 
-/*
-Semaphore Solution to the Critical Selection Problem
-repeat
-wait(mutex);
-critical section
-signal(mutex);
-remainder section
-until false;
-*/
 #define LENGTH 256 //max number of characters in a string
 #define MAXPROCESS 20 //max number of processes
 
 typedef struct {
 	char data[MAXPROCESS][LENGTH]; //array of strings to check if its a palindrome
-	int flag[MAXPROCESS];// array for flag
+	int semState;
 	int turn;// number for turn
+	int flag[MAXPROCESS];// array for flag
 	int numOfChild;//total number of children allowed
 } shared_memory;
 
@@ -43,11 +35,36 @@ shared_memory* shmptr;
 int shmid;
 int key;
 int indexNum = 0;
-
 char* printTime();//prints the current time
 
+struct sembuf sbuf;
+int semid;
+key_t semKey;
 
 
+void semWait(int semid, int semnum)
+{
+	buf.sem_num = semnum;
+	buf.sem_op = 1;
+	buf.sem_flg = 0;
+	if (semop(semid, &buf, 1) == -1) 
+	{
+		perror("Opening semaphore");
+		exit(1);
+	}
+}
+
+void semSig(int semid, int semnum);
+{
+	buf.sem_num = semnum;
+	buf.sem_op = -1;
+	buf.sem_flg = 0;
+	if (semop(semid, &buf, 1) == -1) 
+	{
+		perror("Closing semaphore");
+		exit(1);
+	}
+}
 
 int isPalindrome(char str[])//checks if the string is a palindrome
 {
@@ -101,22 +118,33 @@ void sortPalinOutput(char str[], int palindrome)//sorts the palindrome into two 
 
 void process(const int i)// critical section. int i is the index of array(so you can get the right string from array)
 {
+	semKey = ftok("makefile", 'c');
 	printf("Process:%d - wants to enter CS - %s\n", i, printTime());
-
+	semid = semget(semKey, 1, IPC_CREAT | 0600);
+	if (semid == -1) 
+	{
+		perror("Creating array of sems");
+		exit(1);
+	}
+	if (semctl(semid, 0, SETVAL, (int)1) == -1) 
+	{
+		perror("Setting value to 1");
+		exit(1);
+	}
+	/*
 	int n = shmptr->numOfChild;// sets n equal to the total number of children
 	int j;
-	//printf("print J:%d\n", j);
 	do
 	{
-			
+		
 		shmptr->flag[i] = want_in; // Raise my flag
 		j = shmptr->turn; // Set local variable
 		while (j != i)//while its not our turn
-			j = (shmptr->flag[j] != idle) ? shmptr->turn : (j + 1) % n;//find who is next
-		// Declare intention to enter critical section
+			//j = (shmptr->flag[j] != idle) ? shmptr->turn : (j + 1) % n;//find who is next
+		 Declare intention to enter critical section
 		
 		shmptr->flag[i] = in_cs;
-		
+	
 		for (j = 0; j < n; j++)// Check that no one else is in critical section
 		{ 
 			if ((j != i) && (shmptr->flag[j] == in_cs))//if its not our turn and if our flag is in_cs
@@ -126,9 +154,12 @@ void process(const int i)// critical section. int i is the index of array(so you
 		}
 				
 	} while ((j < n) || ((shmptr->turn != i) && (shmptr->flag[shmptr->turn] != idle)));
-
+	*/
+	semWait(semid, 0);
 	printf("Process:%d - entered CS - %s\n", i, printTime());
-	shmptr->turn = i;// Assign turn to self and enter critical section
+	
+
+	//shmptr->turn = i;// Assign turn to self and enter critical section
 
 	if (isPalindrome(shmptr->data[i]) == 0)
 	{
@@ -142,7 +173,9 @@ void process(const int i)// critical section. int i is the index of array(so you
 	}
 
 	// Exit critical section
+	semSig(semid, 0);
 	printf("Process:%d - exited CS - %s\n", i, printTime());
+	/*
 	j = (shmptr->turn + 1) % n;//find whatever process is next
 	
 	while (shmptr->flag[j] == idle)
@@ -153,7 +186,9 @@ void process(const int i)// critical section. int i is the index of array(so you
 	// Assign turn to next process waiting to enter cs
 	shmptr->turn = j;
 	shmptr->flag[i] = idle; //change own flag to idle
+	*/
 	//printf("before killing process: %d\n", i);
+	sem_unlink(semid);
 	kill(getppid(), SIGUSR2);//kills process
 }
 
@@ -179,7 +214,6 @@ int main(int argc, char* argv[])
 	{
 		shmptr = (shared_memory*)shmat(shmid, NULL, 0);// shmat to attach to shared memory
 	}
-	
 	process(indexNum);// runs critical section
 	return 0;
 }
