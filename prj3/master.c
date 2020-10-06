@@ -18,7 +18,6 @@
 
 #define LENGTH 256 //max number of characters in a string
 #define MAXPROCESS 20 //max number of processes
-
 typedef struct {
 	char data[MAXPROCESS][LENGTH]; //array of strings to check if its a palindrome
 	int turn;// number for turn
@@ -50,8 +49,7 @@ int parentId;
 key_t parentKey;
 key_t key;
 int shmid;
-int semid;
-int semKey;
+
 
 
 
@@ -141,7 +139,7 @@ void timeoutSignal(int signal)//timeout interrupt for timer
 			wait(NULL);
 		}
 		//release memory
-		sem_unlink(semid);
+		
 		shmdt(shmptr);//detach shared memory
 		shmctl(shmid, IPC_RMID, NULL);//remove from memory
 		printf("exiting master process");
@@ -161,7 +159,7 @@ void sigHandler(int signal) //crtl^c handler
 	}
 
 	//release memory
-	sem_unlink(semid);
+	
 	shmdt(shmptr);//detach shared memory
 	shmctl(shmid, IPC_RMID, NULL);//remove from memory
 	printf("interrupt crtl^c caught:exiting master process - %s", printTime());
@@ -261,9 +259,6 @@ int main(int argc, char* argv[])
 	}
 	childProcessTotal = i;//i is hard limited at 20 but if there are less process than the strings in the file, then it sets the number of processes to the number of strings
 	shmptr->numOfChild = childProcessTotal;//gets total number of childern and puts into struct to be shared through memory
-	
-	semKey = ftok("makefile", 'c');
-	semid = semget(semKey, 1, IPC_CREAT | 0600);
 	time(&startTime);//start the timer
 	//time(&curtime);
 
@@ -292,7 +287,7 @@ int main(int argc, char* argv[])
 	}
 	printf("done processing at %s\n", printTime());
 	//release memory
-	sem_unlink(semid);
+	
 	shmdt(shmptr);//detach shared memory
 	shmctl(shmid, IPC_RMID, NULL);//remove from memory
 	exit(0);

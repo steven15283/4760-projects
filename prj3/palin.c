@@ -19,10 +19,10 @@
 
 #define LENGTH 256 //max number of characters in a string
 #define MAXPROCESS 20 //max number of processes
+#define SEM_ID 250 //ID for the semaphore. 
 
 typedef struct {
 	char data[MAXPROCESS][LENGTH]; //array of strings to check if its a palindrome
-	int semState;
 	int turn;// number for turn
 	int flag[MAXPROCESS];// array for flag
 	int numOfChild;//total number of children allowed
@@ -37,34 +37,13 @@ int key;
 int indexNum = 0;
 char* printTime();//prints the current time
 
-struct sembuf sbuf;
-int semid;
+struct sembuf sem_op;
 key_t semKey;
+int sem_set_id;
 
 
-void semWait(int semid, int semnum)
-{
-	buf.sem_num = semnum;
-	buf.sem_op = 1;
-	buf.sem_flg = 0;
-	if (semop(semid, &buf, 1) == -1) 
-	{
-		perror("Opening semaphore");
-		exit(1);
-	}
-}
 
-void semSig(int semid, int semnum);
-{
-	buf.sem_num = semnum;
-	buf.sem_op = -1;
-	buf.sem_flg = 0;
-	if (semop(semid, &buf, 1) == -1) 
-	{
-		perror("Closing semaphore");
-		exit(1);
-	}
-}
+
 
 int isPalindrome(char str[])//checks if the string is a palindrome
 {
@@ -118,15 +97,14 @@ void sortPalinOutput(char str[], int palindrome)//sorts the palindrome into two 
 
 void process(const int i)// critical section. int i is the index of array(so you can get the right string from array)
 {
-	semKey = ftok("makefile", 'c');
 	printf("Process:%d - wants to enter CS - %s\n", i, printTime());
-	semid = semget(semKey, 1, IPC_CREAT | 0600);
-	if (semid == -1) 
+	sem_set_id = semget(SEM_ID, 1, IPC_CREAT | 0600);
+	if (sem_set_id == -1)
 	{
-		perror("Creating array of sems");
+		perror("semget error:creating semaphore set");
 		exit(1);
 	}
-	if (semctl(semid, 0, SETVAL, (int)1) == -1) 
+	if (semctl(sem_set_id, 0, SETVAL, (int)1) == -1) 
 	{
 		perror("Setting value to 1");
 		exit(1);
@@ -155,12 +133,12 @@ void process(const int i)// critical section. int i is the index of array(so you
 				
 	} while ((j < n) || ((shmptr->turn != i) && (shmptr->flag[shmptr->turn] != idle)));
 	*/
-	semWait(semid, 0);
+	
 	printf("Process:%d - entered CS - %s\n", i, printTime());
 	
 
 	//shmptr->turn = i;// Assign turn to self and enter critical section
-
+	
 	if (isPalindrome(shmptr->data[i]) == 0)
 	{
 		sleep(rand() % 3);//0-2 second delay
@@ -173,7 +151,11 @@ void process(const int i)// critical section. int i is the index of array(so you
 	}
 
 	// Exit critical section
-	semSig(semid, 0);
+	sem_op.sem_num = 0;
+	sem_op.sem_op = 1;   
+	sem_op.sem_flg = 0;
+	semop(sem_set_id, &sem_op, 1);
+
 	printf("Process:%d - exited CS - %s\n", i, printTime());
 	/*
 	j = (shmptr->turn + 1) % n;//find whatever process is next
@@ -188,7 +170,6 @@ void process(const int i)// critical section. int i is the index of array(so you
 	shmptr->flag[i] = idle; //change own flag to idle
 	*/
 	//printf("before killing process: %d\n", i);
-	sem_unlink(semid);
 	kill(getppid(), SIGUSR2);//kills process
 }
 
