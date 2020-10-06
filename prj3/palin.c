@@ -38,7 +38,6 @@ int indexNum = 0;
 char* printTime();//prints the current time
 
 struct sembuf sem_op;
-key_t semKey;
 int sem_set_id;
 
 
@@ -97,18 +96,14 @@ void sortPalinOutput(char str[], int palindrome)//sorts the palindrome into two 
 
 void process(const int i)// critical section. int i is the index of array(so you can get the right string from array)
 {
-	printf("Process:%d - wants to enter CS - %s\n", i, printTime());
+	//printf("Process:%d - wants to enter CS - %s\n", i, printTime());
 	sem_set_id = semget(SEM_ID, 1, IPC_CREAT | 0600);
 	if (sem_set_id == -1)
 	{
 		perror("semget error:creating semaphore set");
 		exit(1);
 	}
-	if (semctl(sem_set_id, 0, SETVAL, (int)1) == -1) 
-	{
-		perror("Setting value to 1");
-		exit(1);
-	}
+	
 	/*
 	int n = shmptr->numOfChild;// sets n equal to the total number of children
 	int j;

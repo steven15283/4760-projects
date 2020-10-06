@@ -18,6 +18,8 @@
 
 #define LENGTH 256 //max number of characters in a string
 #define MAXPROCESS 20 //max number of processes
+#define SEM_ID 250 //ID for the semaphore. 
+
 typedef struct {
 	char data[MAXPROCESS][LENGTH]; //array of strings to check if its a palindrome
 	int turn;// number for turn
@@ -49,7 +51,7 @@ int parentId;
 key_t parentKey;
 key_t key;
 int shmid;
-
+int sem_set_id;
 
 
 
@@ -139,7 +141,11 @@ void timeoutSignal(int signal)//timeout interrupt for timer
 			wait(NULL);
 		}
 		//release memory
-		
+		if (semctl(sem_set_id, 0, IPC_RMID) < 0)
+		{
+			perror("error closing semaphore");
+			exit(1);
+		}
 		shmdt(shmptr);//detach shared memory
 		shmctl(shmid, IPC_RMID, NULL);//remove from memory
 		printf("exiting master process");
@@ -159,7 +165,11 @@ void sigHandler(int signal) //crtl^c handler
 	}
 
 	//release memory
-	
+	if (semctl(sem_set_id, 0, IPC_RMID) < 0)
+	{
+		perror("error closing semaphore");
+		exit(1);
+	}
 	shmdt(shmptr);//detach shared memory
 	shmctl(shmid, IPC_RMID, NULL);//remove from memory
 	printf("interrupt crtl^c caught:exiting master process - %s", printTime());
@@ -259,6 +269,13 @@ int main(int argc, char* argv[])
 	}
 	childProcessTotal = i;//i is hard limited at 20 but if there are less process than the strings in the file, then it sets the number of processes to the number of strings
 	shmptr->numOfChild = childProcessTotal;//gets total number of childern and puts into struct to be shared through memory
+	sem_set_id = semget(SEM_ID, 1, IPC_CREAT | 0600);
+
+	if (semctl(sem_set_id, 0, SETVAL, (int)1 ) == -1)
+	{
+		perror("error initializing semaphore set to 1");
+		exit(1);
+	}
 	time(&startTime);//start the timer
 	//time(&curtime);
 
@@ -288,6 +305,11 @@ int main(int argc, char* argv[])
 	printf("done processing at %s\n", printTime());
 	//release memory
 	
+	if (semctl(sem_set_id, 0, IPC_RMID) < 0)
+	{
+		perror("error closing semaphore");
+		exit(1);
+	}
 	shmdt(shmptr);//detach shared memory
 	shmctl(shmid, IPC_RMID, NULL);//remove from memory
 	exit(0);
