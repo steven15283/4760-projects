@@ -311,6 +311,8 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 	shmdt(shmptr);//detach shared memory
+	shmdt(parent);//remove parent
+	shmctl(parentId, IPC_RMID, NULL);//remove parent id
 	shmctl(shmid, IPC_RMID, NULL);//remove from memory
 	exit(0);
 	
