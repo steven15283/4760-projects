@@ -269,7 +269,7 @@ int main(int argc, char* argv[])
 	}
 	childProcessTotal = i;//i is hard limited at 20 but if there are less process than the strings in the file, then it sets the number of processes to the number of strings
 	shmptr->numOfChild = childProcessTotal;//gets total number of childern and puts into struct to be shared through memory
-	sem_set_id = semget(SEM_ID, 1, IPC_CREAT | 0600);
+	sem_set_id = semget(SEM_ID, 1, IPC_CREAT | 0600);// create semaphore set
 
 	if (semctl(sem_set_id, 0, SETVAL, (int)1 ) == -1)
 	{
