@@ -1,24 +1,31 @@
-CC	= gcc
-CFLAGS = -g
-TARGET1	= master
-TARGET2	= palin
-OBJS1	= master.o
-OBJS2	= palin.o
+CC= gcc
+CFLAGS= -Wall -g
 
-all: $(TARGET1) $(TARGET2)
+HEADER= shared.h
 
-$(TARGET1): $(OBJS1)
-	$(CC) -o $@ $(OBJS1) $(LIBS)
+OSS_SRC= oss.c
+OSS_OBJ= $(OSS_SRC:.c=.o)
+OSS= oss
 
-$(TARGET2): $(OBJS2)
-	$(CC) -o $@ $(OBJS2) $(LIBS)
+USER_SRC= user.c
+USER_OBJ= $(USER_SRC:.c=.o)
+USER= user
 
-.SUFFIXES: .c .o
+OUTPUT= $(OSS) $(USER)
 
-.c.o:
-	$(CC) -c $(CFLAGS) $<
+all: $(OUTPUT)
+
+
+$(OSS): $(OSS_OBJ) 
+	$(CC) $(CFLAGS) $(OSS_OBJ) -o $(OSS)
+
+$(USER): $(USER_OBJ)
+	$(CC) $(CFLAGS) $(USER_OBJ) -o $(USER)
+
+%.o: %.c $(HEADER)
+	$(CC) $(CFLAGS) -c $*.c -o $*.o
+
 
 .PHONY: clean
-
 clean:
-	/bin/rm -f core *.o $(TARGET1) $(TARGET2)
+	/bin/rm -f $(OUTPUT) *.o *.dat
