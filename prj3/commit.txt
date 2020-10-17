@@ -1,0 +1,296 @@
+commit f1bf55fd1fd679a99b5dca0cacc12e62a68eda00
+Author: steven <stevenguo15283@gmail.com>
+Date:   Thu Oct 15 00:09:17 2020 -0500
+
+    comments and added semaphore wait
+
+commit 93ac877b0eea6298d305664d26d1169653e34067
+Author: steven <stevenguo15283@gmail.com>
+Date:   Mon Oct 12 13:46:04 2020 -0500
+
+    deallocate parent pointer
+
+commit 755784e3459155c219f86ff490f0a1cc9a43f734
+Author: steven <stevenguo15283@gmail.com>
+Date:   Mon Oct 5 22:18:01 2020 -0500
+
+    finished semaphore implementation
+
+commit c616c3ae6de2b3b9c1e37e2be5da1e4401437d96
+Author: steven <stevenguo15283@gmail.com>
+Date:   Mon Oct 5 20:36:19 2020 -0500
+
+    implemented semaphore
+
+commit 1f69183e5c90724531068d16e4ab8d62b94308b1
+Author: steven <stevenguo15283@gmail.com>
+Date:   Mon Oct 5 11:48:35 2020 -0500
+
+    attempting to implement semaphore
+
+commit d9c5da7afc6fdbd4e7632c4b218cc9ba0a6523e4
+Author: steven <stevenguo15283@gmail.com>
+Date:   Fri Oct 2 23:07:34 2020 -0500
+
+    makefile
+
+commit d3fc829d206f17123715dc9a34561b159df67673
+Author: steven <stevenguo15283@gmail.com>
+Date:   Fri Oct 2 20:03:18 2020 -0500
+
+    imported code from prj2
+
+commit 7babacb616ac0789920935e6524a483f39c3a6e8
+Author: steven <stevenguo15283@gmail.com>
+Date:   Fri Oct 2 13:43:32 2020 -0500
+
+    Create commit.txt
+
+commit 1123c5c79bbe10b5b9dc4c6753c492f6951a9a6e
+Author: steven <stevenguo15283@gmail.com>
+Date:   Fri Oct 2 13:43:27 2020 -0500
+
+    finished
+
+commit 7fbe3dc22276fc68c1a8b197f1e7fb5eaf940521
+Author: steven <stevenguo15283@gmail.com>
+Date:   Fri Oct 2 13:28:11 2020 -0500
+
+    i forgot about making all characters to lower case for palindrome
+
+commit 5ba92b7e24b66357096a464f32caeb602b425cb7
+Author: steven <stevenguo15283@gmail.com>
+Date:   Thu Oct 1 01:17:27 2020 -0500
+
+    finished
+    
+    removed some stuff and added more comments
+
+commit 40490daad93700c79dbfa0eed323bfb47304b61f
+Author: steven <stevenguo15283@gmail.com>
+Date:   Thu Oct 1 00:51:20 2020 -0500
+
+    got the time to print out
+
+commit 09592c4880293f62b05c705d54399d3087fed4f0
+Author: steven15283 <60956234+steven15283@users.noreply.github.com>
+Date:   Wed Sep 30 21:09:11 2020 -0500
+
+    problems ahoy, fixing more stuff
+    
+    process function has problems. infinite loops. trying to debug
+
+commit 9af2af9b3cce826643cca8dcd196a3f29a7ee946
+Author: steven15283 <60956234+steven15283@users.noreply.github.com>
+Date:   Wed Sep 30 15:04:39 2020 -0500
+
+    fizing more stuff
+
+commit 53b8fd981b6b8e0b48daba60b0981e506a4ac10f
+Author: steven15283 <60956234+steven15283@users.noreply.github.com>
+Date:   Wed Sep 30 14:46:35 2020 -0500
+
+    update to files and doing the timer
+
+commit ef27870d91d9f1f6325bc0ee4d050b758b1e0378
+Author: steven15283 <60956234+steven15283@users.noreply.github.com>
+Date:   Wed Sep 30 12:16:00 2020 -0500
+
+    fixing stuffs
+
+commit 5f5f809802542aa8bc27dd421ae7b32ee1c03baf
+Author: steven <stevenguo15283@gmail.com>
+Date:   Tue Sep 29 23:02:16 2020 -0500
+
+    comments
+
+commit 0625adaa7194447d0c20ebfa1328db7bf4ff8631
+Author: steven <stevenguo15283@gmail.com>
+Date:   Tue Sep 29 22:01:04 2020 -0500
+
+    comments
+
+commit 8a16295b9ec5ad13da21aa216785ad26827e956c
+Author: steven <stevenguo15283@gmail.com>
+Date:   Tue Sep 29 20:30:57 2020 -0500
+
+    added signal handlers
+
+commit ef4a7e4ab8e98e0a83a2b6a8e38282738ccf00ec
+Author: steven <stevenguo15283@gmail.com>
+Date:   Tue Sep 29 17:56:48 2020 -0500
+
+    moved all functions up top, did part of critical section
+
+commit 8cfdf6889251ce602af524bb4e6ae1a19da786ec
+Author: steven <stevenguo15283@gmail.com>
+Date:   Tue Sep 29 14:33:35 2020 -0500
+
+    added process and added another variable to the struct
+
+commit 5fd1a97a12114c12966f176e8af49b60c6045fce
+Author: steven <stevenguo15283@gmail.com>
+Date:   Tue Sep 29 08:06:31 2020 -0500
+
+    get arg from exec call and link shared memory from master
+
+commit f68c750db3e8f442d28b0726c4c05bac15655801
+Author: steven <stevenguo15283@gmail.com>
+Date:   Tue Sep 29 00:51:28 2020 -0500
+
+    added things to struct
+
+commit 2ef3f76af97574c217a2930a046d0cfb6052d90e
+Author: steven15283 <60956234+steven15283@users.noreply.github.com>
+Date:   Mon Sep 28 22:31:52 2020 -0500
+
+    allocate mem for parent etc
+
+commit 4e6ab3104ab9febf46cd32d92ef89e5267125cc2
+Author: steven15283 <60956234+steven15283@users.noreply.github.com>
+Date:   Mon Sep 28 12:47:21 2020 -0500
+
+    added createchild function
+
+commit bde05194b4eb44e6e8eaced533224c7c493ce50e
+Author: steven <stevenguo15283@gmail.com>
+Date:   Sun Sep 27 21:59:00 2020 -0500
+
+    update to master.c
+
+commit 09f08982c3d6199da870d1f3657372f94c295336
+Author: steven <stevenguo15283@gmail.com>
+Date:   Sat Sep 26 17:30:20 2020 -0500
+
+    update master.c
+
+commit 0181553c595d6138c919b1c1dbe774c0983db104
+Author: steven <stevenguo15283@gmail.com>
+Date:   Sat Sep 26 02:07:42 2020 -0500
+
+    get string from file into mylist
+
+commit 739e69a8862ffd0840be8c0c4bf306139e3c8e99
+Merge: ea7e4f9 73ab8b1
+Author: steven <stevenguo15283@gmail.com>
+Date:   Fri Sep 25 16:56:53 2020 -0500
+
+    Merge branch 'master' of https://github.com/steven15283/4760-projects
+
+commit ea7e4f94f64ca0328fed1f6ef835c89eb47f9dce
+Author: steven <stevenguo15283@gmail.com>
+Date:   Fri Sep 25 16:56:04 2020 -0500
+
+    create master and palin
+
+commit 73ab8b1bc72326ebd0cf6477e0a3526d063f8a7e
+Author: steven15283 <60956234+steven15283@users.noreply.github.com>
+Date:   Thu Sep 24 00:19:03 2020 -0500
+
+    Delete master.cpp
+
+commit 0e1aa10be18cc65db6441f0690f1ab0b9c09a4a8
+Author: steven <stevenguo15283@gmail.com>
+Date:   Sun Sep 20 01:45:21 2020 -0500
+
+    getting command line args with getopt
+
+commit d0eb064294ce2aacf2125d7961f8985ee25aaade
+Author: steven <stevenguo15283@gmail.com>
+Date:   Sat Sep 19 22:12:31 2020 -0500
+
+    create master.cpp for prj2
+
+commit 6210d5a752bbf9035ed4e61486b1852b681948bb
+Author: steven <stevenguo15283@gmail.com>
+Date:   Sat Sep 19 22:12:13 2020 -0500
+
+    commit log
+
+commit 643264735abcb9ad842690c0d95828546bd979af
+Author: sgpgk <sgpgk@mail.umsl.edu>
+Date:   Sun Sep 13 15:55:44 2020 -0500
+
+    final touches
+
+commit feb3ed13c523e0782691af32fd9843b743485b3f
+Author: sgpgk <sgpgk@mail.umsl.edu>
+Date:   Sun Sep 13 15:13:18 2020 -0500
+
+    debugging
+    
+    getting segmentation error
+
+commit fdd987c5b766f0bb74333381770896a6ad89d270
+Author: sgpgk <sgpgk@mail.umsl.edu>
+Date:   Sun Sep 13 04:15:54 2020 -0500
+
+    update
+
+commit f49c7fdc1d396283f38269e576a91c3b657490ca
+Author: sgpgk <sgpgk@mail.umsl.edu>
+Date:   Sun Sep 13 02:07:35 2020 -0500
+
+    update
+
+commit 96763196ceabb04a97a67fbebe4e098181b4190c
+Author: sgpgk <sgpgk@mail.umsl.edu>
+Date:   Sun Sep 13 00:55:07 2020 -0500
+
+    update
+
+commit c04c0bb1179a91ce3b194a7151f1a2983664fd66
+Author: sgpgk <sgpgk@mail.umsl.edu>
+Date:   Sat Sep 12 17:51:15 2020 -0500
+
+    minor changes
+
+commit 8722c807f6d1de1f15a3bfdd335335bd1b538890
+Author: sgpgk <sgpgk@mail.umsl.edu>
+Date:   Sat Sep 12 17:45:02 2020 -0500
+
+    made option vector global
+
+commit 7011372d5b13010c5e668462c8d6ab1b4f13bf8f
+Author: sgpgk <sgpgk@mail.umsl.edu>
+Date:   Sat Sep 12 17:26:49 2020 -0500
+
+    update to project
+    
+    added printhuman function, added funcitonality to depthfirstapply
+
+commit a765f275413e9fcbd9b4736bafe83bc8ff06748f
+Author: sgpgk <sgpgk@mail.umsl.edu>
+Date:   Sat Sep 12 02:02:34 2020 -0500
+
+    update to sizepathfun
+    
+    sizepathfun returns the size.
+
+commit ec236a199ee4ed0e4eb445d3bd8cc857929015c0
+Author: sgpgk <sgpgk@mail.umsl.edu>
+Date:   Sat Sep 12 01:58:16 2020 -0500
+
+    Revert "Update mydu.cpp"
+    
+    This reverts commit a4e9aa4ada231bee339c8594275839ed0a0ca24b.
+
+commit a4e9aa4ada231bee339c8594275839ed0a0ca24b
+Author: sgpgk <sgpgk@mail.umsl.edu>
+Date:   Sat Sep 12 01:57:54 2020 -0500
+
+    Update mydu.cpp
+
+commit 26960cbbcd42112389adf779a0cd793b9b47c7a2
+Author: sgpgk <sgpgk@mail.umsl.edu>
+Date:   Sat Sep 12 01:28:17 2020 -0500
+
+    update to argument input
+    
+    changed int vector into char vector. changed struct stat st to struct stat fileStat.
+
+commit 863ca0288c9782f368cb4659c2ca9e0f1f0bbb71
+Author: sgpgk <sgpgk@mail.umsl.edu>
+Date:   Sat Sep 12 00:24:04 2020 -0500
+
+    Create mydu.cpp
