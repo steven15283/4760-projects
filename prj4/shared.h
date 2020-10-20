@@ -63,7 +63,7 @@ typedef struct
 	unsigned int nanosecond;
 } simulationTime;
 
-struct ProcessControlBlock
+struct processControlBlock
 {
 	int pid;//simulated process id, range is [0,18]
 	int priority;//Process priority
@@ -121,9 +121,9 @@ simulationTime divide_sim_time(simulationTime simTime, int divisor)
 	return quotient;
 }
 
-ProcessControlBlock create_pcb(int priority, int pid, simulationTime currentTime)
+processControlBlock create_pcb(int priority, int pid, simulationTime currentTime)
 {
-	ProcessControlBlock pcb =
+	processControlBlock pcb =
 	{
 		.pid = pid,
 		.priority = priority,
