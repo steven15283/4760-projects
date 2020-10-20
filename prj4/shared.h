@@ -61,18 +61,18 @@ typedef struct
 {
 	unsigned int second;
 	unsigned int nanosecond;
-} simulationTime;
+} simtime_t;
 
-struct processControlBlock
+struct pcb_t
 {
 	int pid;//simulated process id, range is [0,18]
 	int priority;//Process priority
 	int isReady;//if the process is ready to run
-	simulationTime arrivalTime;//Arrivial time
-	simulationTime cpuTime;//CPU time used
-	simulationTime sysTime;//Time in the system
-	simulationTime burstTime;//Time used in the last burst
-	simulationTime waitTime;//Total sleep time. time waiting for an event
+	simtime_t arrivalTime;//Arrivial time
+	simtime_t cpuTime;//CPU time used
+	simtime_t sysTime;//Time in the system
+	simtime_t burstTime;//Time used in the last burst
+	simtime_t waitTime;//Total sleep time. time waiting for an event
 };
 
 
@@ -82,7 +82,7 @@ typedef struct
 	int messageValue;
 } messageQueue;
 
-void increment_sim_time(simulationTime* simTime, int increment)
+void increment_sim_time(simtime_t* simTime, int increment)
 {
 	simTime->ns += increment;
 	if (simTime->ns >= 1000000000)
@@ -92,9 +92,9 @@ void increment_sim_time(simulationTime* simTime, int increment)
 	}
 }
 // returns a - b
-simulationTime subtract_sim_times(simulationTime a, simulationTime b)
+simtime_t subtract_sim_times(simtime_t a, simtime_t b)
 {
-	simulationTime diff = { .s = a.s - b.s, .ns = a.ns - b.ns };
+	simtime_t diff = { .s = a.s - b.s, .ns = a.ns - b.ns };
 	if (diff.ns < 0)
 	{
 		diff.ns += 1000000000;
@@ -103,9 +103,9 @@ simulationTime subtract_sim_times(simulationTime a, simulationTime b)
 	return diff;
 }
 //returns a + b
-simulationTime add_sim_times(simulationTime a, simulationTime b)
+simtime_t add_sim_times(simtime_t a, simtime_t b)
 {
-	simulationTime sum = { .s = a.s + b.s, .ns = a.ns + b.ns };
+	simtime_t sum = { .s = a.s + b.s, .ns = a.ns + b.ns };
 	if (sum.ns >= 1000000000)
 	{
 		sum.ns -= 1000000000;
@@ -115,15 +115,15 @@ simulationTime add_sim_times(simulationTime a, simulationTime b)
 }
 
 //returns simtime / divisor
-simulationTime divide_sim_time(simulationTime simTime, int divisor)
+simtime_t divide_sim_time(simtime_t simTime, int divisor)
 {
-	simulationTime quotient = { .s = simTime.s / divisor, .ns = simTime.ns / divisor };
+	simtime_t quotient = { .s = simTime.s / divisor, .ns = simTime.ns / divisor };
 	return quotient;
 }
 
-processControlBlock create_pcb(int priority, int pid, simulationTime currentTime)
+pcb_t create_pcb(int priority, int pid, simtime_t currentTime)
 {
-	processControlBlock pcb =
+	pcb_t pcb =
 	{
 		.pid = pid,
 		.priority = priority,
