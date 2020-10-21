@@ -92,3 +92,57 @@ int main(int argc, char* argv[]) {
     // printf("%d term\n", pid);
     return 0;
 }
+
+pcb_t* attach_pcb_table() 
+{
+    pcb_t* pcbTable;
+    pcbTable = shmat(pcbTableId, NULL, 0);
+    if (pcbTableId < 0) {  // error
+        perror("./user: Error: shmat ");
+        exit(EXIT_FAILURE);
+    }
+    return pcbTable;
+}
+
+simtime_t* attach_sim_clock()
+{
+    simtime_t* simClock;
+    simClock = shmat(clockId, NULL, 0);
+    if (clockId < 0) {  // error
+        perror("./user: Error: shmat ");
+        exit(EXIT_FAILURE);
+    }
+    return simClock;
+}
+
+void get_clock_and_table(int n) 
+{
+    // Getting shared memory for the simulated clock
+    clockId = shmget(CLOCK_KEY, sizeof(simtime_t), IPC_CREAT | 0777);
+    if (clockId < 0) {  // error
+        perror("./user: Error: shmget ");
+        exit(EXIT_FAILURE);
+    }
+    // Getting shared memory for the pcb table
+    pcbTableId = shmget(PCB_TABLE_KEY, sizeof(pcb_t) * (n + 1), IPC_CREAT | 0777);
+    if (pcbTableId < 0) {
+        perror("./user: Error: shmget ");
+        exit(EXIT_FAILURE);
+    }
+    return;
+}
+
+// 0: not terminating or blocked, 1: terminating, 2:not terminating but blocked
+int get_outcome() 
+{
+    int tPercent = 5;   //% chance of terminating
+    int bPercent = 5;  //% chance of getting blocked
+    int terminating = ((rand() % 100) + 1) <= tPercent ? TRUE : FALSE;
+    int blocked = ((rand() % 100) + 1) <= bPercent ? TRUE : FALSE;
+    if (terminating)
+        return 1;
+    if (blocked)
+        return 2;
+    // not blocked or terminating
+    return 0;
+}
