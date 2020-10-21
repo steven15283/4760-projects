@@ -27,3 +27,68 @@ int main(int argc, char* argv[]) {
     get_clock_and_table(pid);
     table = attach_pcb_table();
     simClock = attach_sim_clock();
+
+    // while loop to wait for messages from oss until we terminate.
+    while (outcome != 1) {  // outcome == 1 means terminate
+        if ((msgrcv(msqid, &msg, sizeof(msg.mvalue), (pid + 1), 0)) == -1) {
+            perror("./user: Error: msgrcv ");
+            exit(EXIT_FAILURE);
+        }
+        /* message response based on if terminating, blocked or neither
+         * oss will know process is blocked if mvalue < 0
+         *                       is terminating if 0 <= mvalue < 100
+         *                       is using full quantum if mvalue == 100
+         * */
+        outcome = get_outcome();
+        switch (outcome) {
+        case 0:  // full
+            msg.mvalue = 100;
+            break;
+        case 1:  // term
+            msg.mvalue = (rand() % 99) + 1;
+            break;
+        case 2:  // block
+            msg.mvalue = ((rand() % 99) + 1) * -1;
+            timeBlocked.s = simClock->s;
+            timeBlocked.ns = simClock->ns;
+            burst = msg.mvalue * (quantum / 100) * pow(2.0, (double)table[pid].priority);
+            event.s = (rand() % 4) + 1;//generating r [0,5]
+            event.ns = (rand() % 1000) * 1000000; //generating s [0, 999]. * 1000000 to convert to ns
+            // add to wait time total
+            table[pid].waitTime = add_sim_times(table[pid].waitTime, event);
+            event = add_sim_times(event, timeBlocked);//event time = current time + r.s
+            increment_sim_time(&event, (burst * -1));
+            // set status to blocked before telling oss to avoid race
+            // condition. OSS is waiting for a message response so it
+            // cant possibly check our isReady variable yet
+            table[pid].isReady = FALSE;
+            break;
+        default:
+            break;
+        }                       // end switch
+        msg.mtype = pid + 100;  // oss is waiting for a msg w/ type pid+100
+        //printf("USER: sending type: %ld from pid: %d", msg.mtype, pid);
+        if (msgsnd(msqid, &msg, sizeof(msg.mvalue), 0) == -1) {
+            perror("./user: Error: msgsnd ");
+            exit(EXIT_FAILURE);
+        }
+        //printf(", sent type: %ld from pid: %d\n", msg.mtype, pid);
+        // BLocked Outcome
+        // already sent message to oss that we are blocked
+        // set to
+        if (outcome == 2) {
+            // while loop to wait for event time to pass
+            while (table[pid].isReady == FALSE) {
+                //printf("waiting %ds%9dns\n", event.s, event.ns);
+                if (event.s > simClock->s) {
+                    table[pid].isReady = TRUE;
+                }
+                else if (event.ns >= simClock->ns && event.s >= simClock->s) {
+                    table[pid].isReady = TRUE;
+                }
+            }
+        }
+    }  // end while. no longer sending or recieving messages
+    // printf("%d term\n", pid);
+    return 0;
+}
