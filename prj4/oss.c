@@ -17,194 +17,7 @@ int main(int argc, char* argv[])
 
 	srand(time(0));// seed rand
 	printf("----------Starting Simulation----------\n");
-    oss(maxProcesses);
-	printf("----------Simulation Complete----------\n");
-	msgctl(msqid, IPC_RMID, NULL);  //delete msgqueue
-	remove_shm();
-	return 0;
 
-}
-
-/*SIGALRM handler*/
-static void time_out() 
-{
-    fprintf(stderr, "3 second timeout\n");
-    fprintf(stderr, "Killing user/child processes\n");
-    cleanup();
-    exit(EXIT_SUCCESS);
-}
-
-/*delete shared memory, terminate children*/
-void cleanup() 
-{
-    remove_shm();                   // remove shared memory
-    msgctl(msqid, IPC_RMID, NULL);  // this deletes msgqueue
-    kill(0, SIGTERM);               // terminate users/children
-    return;
-}
-
-/*Remove the simulated clock and pcb table from shared memory*/
-void remove_shm() 
-{
-    shmctl(clockId, IPC_RMID, NULL);
-    shmctl(pcbTableId, IPC_RMID, NULL);
-    return;
-}
-
-/*Create pcb table in shared memory for n processes*/
-processControlBlock* create_table(int n) 
-{
-    processControlBlock* table;
-    pcbTableId = shmget(processControlBlockABLE_KEY, sizeof(processControlBlock) * n, IPC_CREAT | 0777);
-    if (pcbTableId < 0) 
-    {  // error
-        perror("./oss: Error: shmget ");
-        cleanup();
-    }
-    table = shmat(pcbTableId, NULL, 0);
-    if (table < 0) {  // error
-        perror("./oss: Error: shmat ");
-        cleanup();
-    }
-    return table;
-}
-
-/*Create a simulated clock in shared memory initialized to 0s0ns*/
-simtime_t* create_sim_clock() 
-{
-    simtime_t* simClock;
-    clockId = shmget(CLOCK_KEY, sizeof(simtime_t), IPC_CREAT | 0777);
-    if (clockId < 0) 
-    {  // error
-        perror("./oss: Error: shmget ");
-        cleanup();
-    }
-    simClock = shmat(clockId, NULL, 0);
-    if (simClock < 0) {  // error
-        perror("./user: Error: shmat ");
-        cleanup();
-    }
-    simClock->s = 0;
-    simClock->ns = 0;
-    return simClock;
-}
-
-/*Create a message queue*/
-void create_msqueue() 
-{
-    msqid = msgget(MSG_KEY, 0666 | IPC_CREAT);
-    if (msqid < 0) 
-    {
-        perror("./oss: Error: msgget ");
-        cleanup();
-    }
-    return;
-}
-
-/*Return a pid if there is one available, returns -1 otherwise*/
-int get_sim_pid(int* pids, int pidsCount)
-{
-    int i;
-    for (i = 0; i < pidsCount; i++)
-    {
-        if (pids[i])
-        {  // sim pid i is available
-            return i;     // return available pid
-        }
-    }
-    return -1;  // no available pids
-}
-
-/*return a random simtime in range [0, max] + current time*/
-simtime_t get_next_process_time(simtime_t max, simtime_t currentTime)
-{
-    simtime_t nextTime = { .ns = (rand() % (max.ns + 1)) + currentTime.ns, .s = (rand() % (max.s + 1)) + currentTime.s };
-    if (nextTime.ns >= 1000000000) 
-    {
-        nextTime.s += 1;
-        nextTime.ns -= 1000000000;
-    }
-    return nextTime;
-}
-
-/* Returns 0 chance % of the time on average. returns 1 otherwise*/
-int rand_priority(int chance)
-{
-    if ((rand() % 101) <= chance)
-        return 0;
-    else
-        return 1;
-}
-
-/* Takes in generation criteria
- * returns 0 if any of the generation criteria fail
- * returns 1 otherwise
- * note: 2 ifs for time because of an edge case where next process spawns at
- * at a high ns value. It would be rare for the s and ns to of the sim clock
- * to be higher than the next process time
- * eg with just s >= s and ns >= ns, 2s0ns >= 1s9ns is false
- * with also checking s > s 2s0ns >= 1s9ns is true*/
-int should_spawn(int pid, simtime_t next, simtime_t now, int generated, int max)
-{
-    if (generated >= max)  // generated enough/too many processes
-        return FALSE;
-    if (pid < 0)  // no available pids
-        return FALSE;
-    // not time for next process
-    if (next.s > now.s)
-        return FALSE;
-    // more specific not time for next process
-    if (next.s >= now.s && next.ns > now.ns)
-        return FALSE;
-
-    return TRUE;
-}
-
-int check_blocked(int* blocked, processControlBlock* table, int count)
-{
-    int i; //loop iterator
-    for (i = 0; i < count; i++)
-    {
-        if (blocked[i] == TRUE)
-        {
-            if (table[i].isReady == TRUE)
-            {
-                return i;
-            }
-        }
-    }
-    return -1;
-}
-
-/*Dispatches a process by sending a message witht he appropriate time quantum to
- * the given pid
- * waits to recieve a response and returns that response */
-int dispatch(int pid, int priority, int msqid, simtime_t currentTime, int quantum, int* lines)
-{
-    mymsg_t msg;                                     // message to be sent
-    quantum = quantum * pow(2.0, (double)priority);  // i = queue #, slice = 2^i * quantum
-    msg.mtype = pid + 1;                             // pids recieve messages of type (their pid) + 1
-    msg.mvalue = quantum;
-    fprintf(logFile, "%-5d: OSS: Dispatch   PID: %3d Queue: %d TIME: %ds%09dns\n", *lines, pid, priority, currentTime.s, currentTime.ns);
-    *lines += 1;
-    // send the message
-    if (msgsnd(msqid, &msg, sizeof(msg.mvalue), 0) == -1)
-    {
-        perror("./oss: Error: msgsnd ");
-        cleanup();
-    }
-    // immediately wait for the response
-    if ((msgrcv(msqid, &msg, sizeof(msg.mvalue), pid + 100, 0)) == -1)
-    {
-        perror("./oss: Error: msgrcv ");
-        cleanup();
-    }
-    return msg.mvalue;
-}
-
-/**OSS: Operating System Simulator**/
-void oss(int maxProcesses)
-{
     /*Scheduling structures*/
     processControlBlock* table;// Process control block table
     simtime_t* simClock;// simulated system clock
@@ -212,8 +25,8 @@ void oss(int maxProcesses)
     queue_t* queue1; // highest level of mlfq
     queue_t* queue2; // mid level
     queue_t* queue3;  // lowest level
-    int blockedPids[maxProcesses];    //blocked "queue"
-    int availablePids[maxProcesses];  // pseudo bit vector of available pids
+    int blockedPids[maxProcesses]; //blocked "queue"
+    int availablePids[maxProcesses]; // pseudo bit vector of available pids
 
     int schedInc = 1000;// scheduling overhead
     int idleInc = 100000;// idle increment
@@ -227,7 +40,7 @@ void oss(int maxProcesses)
     int terminated = 0; // counter of terminated processes
     int generated = 0; // counter of generated processes
     int lines = 0;  // lines written to the file
-    int maxTotalProcesses = 100; // how many processes to generate total
+    int maxTotalProcesses = 20; // how many processes to generate total
     int simPid; // holds a simulated pid
     int priority;  // holds priority of a process
     char simPidArg[3]; // exec arg 2. simulated pid as a string
@@ -287,9 +100,9 @@ void oss(int maxProcesses)
         // check for an available pid
         simPid = get_sim_pid(availablePids, maxProcesses);
 
-        // if we have not generated 100 processes and it is time for the next one
-        // printf("%d <= %d && %d <= %d\n", nextProcess.s, simClock->s,
-        // nextProcess.ns, simClock->ns);
+        
+        // printf("%d <= %d && %d <= %d\n", nextProcess.s, simClock->s,nextProcess.ns, simClock->ns);
+
         if (should_spawn(simPid, nextProcess, (*simClock), generated, maxTotalProcesses))
         {
             // printf("spawn\n");
@@ -298,8 +111,7 @@ void oss(int maxProcesses)
             availablePids[simPid] = FALSE;     // set pid to unavailable
             // get random priority(0:real time or 1:user)
             priority = rand_priority(5);
-            fprintf(logFile, "%-5d: OSS: Generating process PID %d in queue %d at %ds%09dns\n",
-                lines++, simPid, priority, simClock->s, simClock->ns);
+            fprintf(logFile, "%-5d: OSS: Generating process PID %d in queue %d at %ds%09dns\n",lines++, simPid, priority, simClock->s, simClock->ns);
             // create pcb for new process at available pid
             table[simPid] = create_pcb(priority, simPid, (*simClock));
             // queue in round robin if real-time(priority == 0)
@@ -551,5 +363,178 @@ void oss(int maxProcesses)
     printf("Avg. Sleep Time: %.2fs\n", (avgSYS - avgCPU));
     printf("Total Idle Time: %d.%ds\n", totalIdle.s, totalIdle.ns / 10000000);
     printf("Total Run Time:  %d.%ds\n", simClock->s, simClock->ns / 10000000);
+	printf("----------Simulation Complete----------\n");
+	msgctl(msqid, IPC_RMID, NULL);  //delete msgqueue
+	remove_shm();
+	return 0;
+
+}
+
+/*delete shared memory, terminate children*/
+void cleanup() 
+{
+    remove_shm();                   // remove shared memory
+    msgctl(msqid, IPC_RMID, NULL);  // this deletes msgqueue
+    kill(0, SIGTERM);               // terminate users/children
     return;
 }
+
+/*Remove the simulated clock and pcb table from shared memory*/
+void remove_shm() 
+{
+    shmctl(clockId, IPC_RMID, NULL);
+    shmctl(pcbTableId, IPC_RMID, NULL);
+    return;
+}
+
+/*Create pcb table in shared memory for n processes*/
+processControlBlock* create_table(int n) 
+{
+    processControlBlock* table;
+    pcbTableId = shmget(processControlBlockABLE_KEY, sizeof(processControlBlock) * n, IPC_CREAT | 0777);
+    if (pcbTableId < 0) 
+    {  // error
+        perror("./oss: Error: shmget ");
+        cleanup();
+    }
+    table = shmat(pcbTableId, NULL, 0);
+    if (table < 0) {  // error
+        perror("./oss: Error: shmat ");
+        cleanup();
+    }
+    return table;
+}
+
+/*Create a simulated clock in shared memory initialized to 0s0ns*/
+simtime_t* create_sim_clock() 
+{
+    simtime_t* simClock;
+    clockId = shmget(CLOCK_KEY, sizeof(simtime_t), IPC_CREAT | 0777);
+    if (clockId < 0) 
+    {  // error
+        perror("./oss: Error: shmget ");
+        cleanup();
+    }
+    simClock = shmat(clockId, NULL, 0);
+    if (simClock < 0) {  // error
+        perror("./user: Error: shmat ");
+        cleanup();
+    }
+    simClock->s = 0;
+    simClock->ns = 0;
+    return simClock;
+}
+
+/*Create a message queue*/
+void create_msqueue() 
+{
+    msqid = msgget(MSG_KEY, 0666 | IPC_CREAT);
+    if (msqid < 0) 
+    {
+        perror("./oss: Error: msgget ");
+        cleanup();
+    }
+    return;
+}
+
+/*Return a pid if there is one available, returns -1 otherwise*/
+int get_sim_pid(int* pids, int pidsCount)
+{
+    int i;
+    for (i = 0; i < pidsCount; i++)
+    {
+        if (pids[i])
+        {  // sim pid i is available
+            return i;     // return available pid
+        }
+    }
+    return -1;  // no available pids
+}
+
+/*return a random simtime in range [0, max] + current time*/
+simtime_t get_next_process_time(simtime_t max, simtime_t currentTime)
+{
+    simtime_t nextTime = { .ns = (rand() % (max.ns + 1)) + currentTime.ns, .s = (rand() % (max.s + 1)) + currentTime.s };
+    if (nextTime.ns >= 1000000000) 
+    {
+        nextTime.s += 1;
+        nextTime.ns -= 1000000000;
+    }
+    return nextTime;
+}
+
+/* Returns 0 chance % of the time on average. returns 1 otherwise*/
+int rand_priority(int chance)
+{
+    if ((rand() % 101) <= chance)
+        return 0;
+    else
+        return 1;
+}
+
+/* Takes in generation criteria
+ * returns 0 if any of the generation criteria fail
+ * returns 1 otherwise
+ * note: 2 ifs for time because of an edge case where next process spawns at
+ * at a high ns value. It would be rare for the s and ns to of the sim clock
+ * to be higher than the next process time
+ * eg with just s >= s and ns >= ns, 2s0ns >= 1s9ns is false
+ * with also checking s > s 2s0ns >= 1s9ns is true*/
+int should_spawn(int pid, simtime_t next, simtime_t now, int generated, int max)
+{
+    if (generated >= max)  // generated enough/too many processes
+        return FALSE;
+    if (pid < 0)  // no available pids
+        return FALSE;
+    // not time for next process
+    if (next.s > now.s)
+        return FALSE;
+    // more specific not time for next process
+    if (next.s >= now.s && next.ns > now.ns)
+        return FALSE;
+
+    return TRUE;
+}
+
+int check_blocked(int* blocked, processControlBlock* table, int count)
+{
+    int i; //loop iterator
+    for (i = 0; i < count; i++)
+    {
+        if (blocked[i] == TRUE)
+        {
+            if (table[i].isReady == TRUE)
+            {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
+/*Dispatches a process by sending a message with the appropriate time quantum to
+ * the given pid
+ * waits to recieve a response and returns that response */
+int dispatch(int pid, int priority, int msqid, simtime_t currentTime, int quantum, int* lines)
+{
+    mymsg_t msg;                                     // message to be sent
+    quantum = quantum * pow(2.0, (double)priority);  // i = queue #, slice = 2^i * quantum
+    msg.mtype = pid + 1;                             // pids recieve messages of type (their pid) + 1
+    msg.mvalue = quantum;
+    fprintf(logFile, "%-5d: OSS: Dispatch   PID: %3d Queue: %d TIME: %ds%09dns\n", *lines, pid, priority, currentTime.s, currentTime.ns);
+    *lines += 1;
+    // send the message
+    if (msgsnd(msqid, &msg, sizeof(msg.mvalue), 0) == -1)
+    {
+        perror("./oss: Error: msgsnd ");
+        cleanup();
+    }
+    // immediately wait for the response
+    if ((msgrcv(msqid, &msg, sizeof(msg.mvalue), pid + 100, 0)) == -1)
+    {
+        perror("./oss: Error: msgrcv ");
+        cleanup();
+    }
+    return msg.mvalue;
+}
+
