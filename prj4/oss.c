@@ -149,17 +149,17 @@ int main(int argc, char* argv[])
             fprintf(logFile, "%-5d: OSS: Unblocked. PID: %3d TIME: %ds%09dns\n", lines++, simPid, simClock->s, simClock->ns);
             if (table[simPid].priority == 0)
             {
-                fprintf(logFile, "%-5d: OSS: PID: %3d -> Round Robin\n", lines++, simPid);
+                fprintf(logFile, "%-5d: OSS: PID: %3d -> round robin\n", lines++, simPid);
                 enqueue(queue0, simPid);
             }
             else {
-                fprintf(logFile, "%-5d: OSS: PID: %3d -> Queue 1\n", lines++, simPid);
+                fprintf(logFile, "%-5d: OSS: PID: %3d -> queue 1\n", lines++, simPid);
                 enqueue(queue1, simPid);
             }
             increment_sim_time(simClock, blockedInc);  // and blocked queue overhead to the clock
         }
 
-        /*Check Round Robin*/
+        /*Check Round Robin/highest queue*/
         else if (queue0->items > 0)
         {
             increment_sim_time(simClock, schedInc);  // increment for scheduling overhead
@@ -173,27 +173,27 @@ int main(int argc, char* argv[])
             {                  // Used full time slice
                 increment_sim_time(simClock, burst);  // increment the clock
                 fprintf(logFile, "%-5d: OSS: Full Slice PID: %3d Used: %9dns\n", lines++, simPid, burst);
-                fprintf(logFile, "%-5d: OSS: PID: %3d -> Round Robin\n", lines++, simPid);
+                fprintf(logFile, "%-5d: OSS: PID: %3d -> expired high priority queue\n", lines++, simPid);
                 // updat pcb
                 increment_sim_time(&table[simPid].cpuTime, burst);
                 table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
-                enqueue(queue0, simPid);
+                enqueue(exqueue1, simPid);
             }
             else if (response < 0)
             {  // BLocked
                 burst = burst * -1;
                 increment_sim_time(simClock, burst);  // increment the clock
                 fprintf(logFile, "%-5d: OSS: Blocked    PID: %3d Used: %9dns\n", lines++, simPid, burst);
-                fprintf(logFile, "%-5d: OSS: PID: %3d -> Blocked queue\n", lines++, simPid);
+                fprintf(logFile, "%-5d: OSS: PID: %3d -> blocked queue\n", lines++, simPid);
                 // update pcb
                 increment_sim_time(&table[simPid].cpuTime, burst);
                 table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
                 blockedPids[simPid] = 1;//add to blocked "queue"
             }
             else
-            {                                // Terminated
-                increment_sim_time(simClock, burst);  // increment the clock
-                pid = wait(NULL);                     // wait for child to finish
+            {// Terminated
+                increment_sim_time(simClock, burst); // increment the clock
+                pid = wait(NULL); // wait for child to finish
                 // update pcb
                 increment_sim_time(&table[simPid].cpuTime, burst);
                 table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
@@ -219,19 +219,19 @@ int main(int argc, char* argv[])
             {
                 increment_sim_time(simClock, burst);
                 fprintf(logFile, "%-5d: OSS: Full Slice PID: %3d Used: %9dns\n", lines++, simPid, burst);
-                fprintf(logFile, "%-5d: OSS: PID: %3d -> Queue 2\n", lines++, simPid);
+                fprintf(logFile, "%-5d: OSS: PID: %3d -> expired queue 2\n", lines++, simPid);
                 // updat pcb
                 increment_sim_time(&table[simPid].cpuTime, burst);
                 table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
                 table[simPid].priority = 2;
-                enqueue(queue2, simPid);
+                enqueue(exqueue2, simPid);
             }
             else if (response < 0)
             {  // BLocked
                 burst = burst * -1;
                 increment_sim_time(simClock, burst);  // increment the clock
                 fprintf(logFile, "%-5d: OSS: Blocked    PID: %3d Used: %9dns\n", lines++, simPid, burst);
-                fprintf(logFile, "%-5d: OSS: PID: %3d -> Blocked queue\n", lines++, simPid);
+                fprintf(logFile, "%-5d: OSS: PID: %3d -> blocked queue\n", lines++, simPid);
                 // update pcb
                 increment_sim_time(&table[simPid].cpuTime, burst);
                 table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
@@ -266,12 +266,12 @@ int main(int argc, char* argv[])
             {
                 increment_sim_time(simClock, burst);
                 fprintf(logFile, "%-5d: OSS: Full Slice PID: %3d Used: %9dns\n", lines++, simPid, burst);
-                fprintf(logFile, "%-5d: OSS: PID: %3d -> Queue 3\n", lines++, simPid);
+                fprintf(logFile, "%-5d: OSS: PID: %3d -> Expired Queue 3\n", lines++, simPid);
                 // updat pcb
                 increment_sim_time(&table[simPid].cpuTime, burst);
                 table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
                 table[simPid].priority = 3;
-                enqueue(queue3, simPid);
+                enqueue(exqueue3, simPid);
             }
             else if (response < 0)
             {  // BLocked
@@ -313,11 +313,11 @@ int main(int argc, char* argv[])
             {
                 increment_sim_time(simClock, burst);
                 fprintf(logFile, "%-5d: OSS: Full Slice PID: %3d Used: %9dns\n", lines++, simPid, burst);
-                fprintf(logFile, "%-5d: OSS: PID: %3d -> Queue 3\n", lines++, simPid);
+                fprintf(logFile, "%-5d: OSS: PID: %3d -> Expired Queue 3\n", lines++, simPid);
                 // updat pcb
                 increment_sim_time(&table[simPid].cpuTime, burst);
                 table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
-                enqueue(queue3, simPid);
+                enqueue(exqueue3, simPid);
             }
             else if (response < 0)
             {  // BLocked
@@ -525,9 +525,9 @@ int check_blocked(int* blocked, processControlBlock* table, int count)
  * waits to recieve a response and returns that response */
 int dispatch(int pid, int priority, int msqid, simtime_t currentTime, int quantum, int* lines)
 {
-    mymsg_t msg;                                     // message to be sent
-    quantum = quantum * pow(2.0, (double)priority);  // i = queue #, slice = 2^i * quantum
-    msg.mtype = pid + 1;                             // pids recieve messages of type (their pid) + 1
+    mymsg_t msg;// message to be sent
+    quantum = quantum * pow(2.0, (double)priority);// i = queue #, slice = 2^i * quantum
+    msg.mtype = pid + 1;// pids recieve messages of type (pid) + 1
     msg.mvalue = quantum;
     fprintf(logFile, "%-5d: OSS: Dispatch   PID: %3d Queue: %d TIME: %ds%09dns\n", *lines, pid, priority, currentTime.s, currentTime.ns);
     *lines += 1;
