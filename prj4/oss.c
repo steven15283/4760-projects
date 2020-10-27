@@ -253,6 +253,8 @@ int main(int argc, char* argv[])
                 terminated += 1;               // increment terminated processes counter
                 fprintf(logFile, "%-5d: OSS: Terminated PID: %3d Used: %9dns\n", lines++, simPid, burst);
             }  // end response ifs
+
+            
         }    // end queue 1 check
         /* Queue 2 */
         else if (queue2->items > 0)
@@ -300,6 +302,53 @@ int main(int argc, char* argv[])
                 terminated += 1;               // increment terminated processes counter
                 fprintf(logFile, "%-5d: OSS: Terminated PID: %3d Used: %9dns\n", lines++, simPid, burst);
             }  // end response ifs
+
+            if (exQueue2->items > 0)
+            {
+                increment_sim_time(simClock, schedInc);
+                simPid = dequeue(exQueue1);
+                priority = table[simPid].priority;
+                response = dispatch(simPid, priority, msqid, (*simClock), quantum, &lines);
+                burst = response * (quantum / 100) * pow(2.0, (double)priority);
+                if (response == 100)
+                {
+                    increment_sim_time(simClock, burst);
+                    fprintf(logFile, "%-5d: OSS: Full Slice PID: %3d Used: %9dns\n", lines++, simPid, burst);
+                    fprintf(logFile, "%-5d: OSS: PID: %3d -> expired queue 3\n", lines++, simPid);
+                    // updat pcb
+                    increment_sim_time(&table[simPid].cpuTime, burst);
+                    table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
+                    table[simPid].priority = 3;
+                    enqueue(exqueue3, simPid);
+                }
+                else if (response < 0)
+                {  // BLocked
+                    burst = burst * -1;
+                    increment_sim_time(simClock, burst);  // increment the clock
+                    fprintf(logFile, "%-5d: OSS: Blocked    PID: %3d Used: %9dns\n", lines++, simPid, burst);
+                    fprintf(logFile, "%-5d: OSS: PID: %3d -> blocked queue\n", lines++, simPid);
+                    // update pcb
+                    increment_sim_time(&table[simPid].cpuTime, burst);
+                    table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
+                    table[simPid].priority = 1;  // set priority back to highest level
+                    blockedPids[simPid] = 1;//add to blocked "queue"
+                }
+                else
+                {                                // Terminated
+                    increment_sim_time(simClock, burst);  // increment the clock
+                    pid = wait(NULL);                     // wait for child to finish
+                    // update pcb
+                    increment_sim_time(&table[simPid].cpuTime, burst);
+                    table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
+                    // update totals
+                    totalCPU = add_sim_times(totalCPU, table[simPid].cpuTime);
+                    totalSYS = add_sim_times(totalSYS, table[simPid].sysTime);
+                    totalWait = add_sim_times(totalWait, table[simPid].waitTime);
+                    availablePids[simPid] = 1;  // set simpid to available
+                    terminated += 1;               // increment terminated processes counter
+                    fprintf(logFile, "%-5d: OSS: Terminated PID: %3d Used: %9dns\n", lines++, simPid, burst);
+                }  // end response ifs
+            }
         }    // end queue 2 check
         /* Queue 3 */
         else if (queue3->items > 0)
@@ -346,6 +395,53 @@ int main(int argc, char* argv[])
                 terminated += 1;               // increment terminated processes counter
                 fprintf(logFile, "%-5d: OSS: Terminated PID: %3d Used: %9dns\n", lines++, simPid, burst);
             }  // end response ifs
+
+            if (exQueue3->items > 0)
+            {
+                increment_sim_time(simClock, schedInc);
+                simPid = dequeue(exQueue1);
+                priority = table[simPid].priority;
+                response = dispatch(simPid, priority, msqid, (*simClock), quantum, &lines);
+                burst = response * (quantum / 100) * pow(2.0, (double)priority);
+                if (response == 100)
+                {
+                    increment_sim_time(simClock, burst);
+                    fprintf(logFile, "%-5d: OSS: Full Slice PID: %3d Used: %9dns\n", lines++, simPid, burst);
+                    fprintf(logFile, "%-5d: OSS: PID: %3d -> expired queue 3\n", lines++, simPid);
+                    // updat pcb
+                    increment_sim_time(&table[simPid].cpuTime, burst);
+                    table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
+                    table[simPid].priority = 3;
+                    enqueue(exqueue3, simPid);
+                }
+                else if (response < 0)
+                {  // BLocked
+                    burst = burst * -1;
+                    increment_sim_time(simClock, burst);  // increment the clock
+                    fprintf(logFile, "%-5d: OSS: Blocked    PID: %3d Used: %9dns\n", lines++, simPid, burst);
+                    fprintf(logFile, "%-5d: OSS: PID: %3d -> blocked queue\n", lines++, simPid);
+                    // update pcb
+                    increment_sim_time(&table[simPid].cpuTime, burst);
+                    table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
+                    table[simPid].priority = 1;  // set priority back to highest level
+                    blockedPids[simPid] = 1;//add to blocked "queue"
+                }
+                else
+                {                                // Terminated
+                    increment_sim_time(simClock, burst);  // increment the clock
+                    pid = wait(NULL);                     // wait for child to finish
+                    // update pcb
+                    increment_sim_time(&table[simPid].cpuTime, burst);
+                    table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
+                    // update totals
+                    totalCPU = add_sim_times(totalCPU, table[simPid].cpuTime);
+                    totalSYS = add_sim_times(totalSYS, table[simPid].sysTime);
+                    totalWait = add_sim_times(totalWait, table[simPid].waitTime);
+                    availablePids[simPid] = 1;  // set simpid to available
+                    terminated += 1;               // increment terminated processes counter
+                    fprintf(logFile, "%-5d: OSS: Terminated PID: %3d Used: %9dns\n", lines++, simPid, burst);
+                }  // end response ifs
+            }
         }    // end queue 3 check
         /* IDLE: empty queues and nothing ready to spawn */
         else {
