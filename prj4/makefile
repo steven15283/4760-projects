@@ -1,31 +1,22 @@
-CC= gcc
-CFLAGS= -Wall -g
+CC = gcc
+CFLAGS = -g -Wall -lm
 
-HEADER= shared.h
+OSS = oss
+USER = user
 
-OSS_SRC= oss.c
-OSS_OBJ= $(OSS_SRC:.c=.o)
-OSS= oss
+all: oss user
 
-USER_SRC= user.c
-USER_OBJ= $(USER_SRC:.c=.o)
-USER= user
+oss: oss.o
+	$(CC) $(CFLAGS) -o $(OSS) oss.o
 
-OUTPUT= $(OSS) $(USER)
+oss.o: oss.c oss.h
+	$(CC) $(CFLAGS) -c oss.c
 
-all: $(OUTPUT)
+user: user.o
+	$(CC) $(CFLAGS) -o $(USER) user.o
 
+user.o: user.c
+	$(CC) $(CFLAGS) -c user.c
 
-$(OSS): $(OSS_OBJ) 
-	$(CC) $(CFLAGS) $(OSS_OBJ) -o $(OSS)
-
-$(USER): $(USER_OBJ)
-	$(CC) $(CFLAGS) $(USER_OBJ) -o $(USER)
-
-%.o: %.c $(HEADER)
-	$(CC) $(CFLAGS) -c $*.c -o $*.o
-
-
-.PHONY: clean
 clean:
-	/bin/rm -f $(OUTPUT) *.o *.dat
+	rm *.o oss user ossLog.txt

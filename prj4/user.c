@@ -1,14 +1,22 @@
-#include "shared.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <sys/shm.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
+#include <math.h>
+
+#include "oss.h"
 
 pcb_t* attach_pcb_table();
 simtime_t* attach_sim_clock();
 void get_clock_and_table(int n);
 int get_outcome();
 
-int main(int argc, char* argv[]) 
-{
-    if (argc < 2) 
-    {
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
         fprintf(stderr, "Usage: ./user pid msqid quantum\n");
         exit(EXIT_SUCCESS);
     }
@@ -32,8 +40,7 @@ int main(int argc, char* argv[])
 
     // while loop to wait for messages from oss until we terminate.
     while (outcome != 1) {  // outcome == 1 means terminate
-        if ((msgrcv(msqid, &msg, sizeof(msg.mvalue), (pid + 1), 0)) == -1) 
-        {
+        if ((msgrcv(msqid, &msg, sizeof(msg.mvalue), (pid + 1), 0)) == -1) {
             perror("./user: Error: msgrcv ");
             exit(EXIT_FAILURE);
         }
@@ -43,8 +50,7 @@ int main(int argc, char* argv[])
          *                       is using full quantum if mvalue == 100
          * */
         outcome = get_outcome();
-        switch (outcome) 
-        {
+        switch (outcome) {
         case 0:  // full
             msg.mvalue = 100;
             break;
@@ -72,8 +78,7 @@ int main(int argc, char* argv[])
         }                       // end switch
         msg.mtype = pid + 100;  // oss is waiting for a msg w/ type pid+100
         //printf("USER: sending type: %ld from pid: %d", msg.mtype, pid);
-        if (msgsnd(msqid, &msg, sizeof(msg.mvalue), 0) == -1) 
-        {
+        if (msgsnd(msqid, &msg, sizeof(msg.mvalue), 0) == -1) {
             perror("./user: Error: msgsnd ");
             exit(EXIT_FAILURE);
         }
@@ -81,18 +86,14 @@ int main(int argc, char* argv[])
         // BLocked Outcome
         // already sent message to oss that we are blocked
         // set to
-        if (outcome == 2) 
-        {
+        if (outcome == 2) {
             // while loop to wait for event time to pass
-            while (table[pid].isReady == FALSE) 
-            {
+            while (table[pid].isReady == FALSE) {
                 //printf("waiting %ds%9dns\n", event.s, event.ns);
-                if (event.s > simClock->s) 
-                {
+                if (event.s > simClock->s) {
                     table[pid].isReady = TRUE;
                 }
-                else if (event.ns >= simClock->ns && event.s >= simClock->s) 
-                {
+                else if (event.ns >= simClock->ns && event.s >= simClock->s) {
                     table[pid].isReady = TRUE;
                 }
             }
@@ -102,36 +103,30 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-pcb_t* attach_pcb_table() 
-{
+pcb_t* attach_pcb_table() {
     pcb_t* pcbTable;
     pcbTable = shmat(pcbTableId, NULL, 0);
-    if (pcbTableId < 0) 
-    {  // error
+    if (pcbTableId < 0) {  // error
         perror("./user: Error: shmat ");
         exit(EXIT_FAILURE);
     }
     return pcbTable;
 }
 
-simtime_t* attach_sim_clock()
-{
+simtime_t* attach_sim_clock() {
     simtime_t* simClock;
     simClock = shmat(clockId, NULL, 0);
-    if (clockId < 0) 
-    {  // error
+    if (clockId < 0) {  // error
         perror("./user: Error: shmat ");
         exit(EXIT_FAILURE);
     }
     return simClock;
 }
 
-void get_clock_and_table(int n) 
-{
+void get_clock_and_table(int n) {
     // Getting shared memory for the simulated clock
     clockId = shmget(CLOCK_KEY, sizeof(simtime_t), IPC_CREAT | 0777);
-    if (clockId < 0) 
-    {  // error
+    if (clockId < 0) {  // error
         perror("./user: Error: shmget ");
         exit(EXIT_FAILURE);
     }
@@ -145,8 +140,7 @@ void get_clock_and_table(int n)
 }
 
 // 0: not terminating or blocked, 1: terminating, 2:not terminating but blocked
-int get_outcome() 
-{
+int get_outcome() {
     int tPercent = 5;   //% chance of terminating
     int bPercent = 5;  //% chance of getting blocked
     int terminating = ((rand() % 100) + 1) <= tPercent ? TRUE : FALSE;
