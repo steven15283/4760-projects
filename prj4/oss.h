@@ -2,10 +2,10 @@
 #define OSS_H
 
 #include <sys/types.h>
-
-#define TRUE 1
-#define FALSE 0
-
+#define TRUE 1 //boolean values
+#define FALSE 0//boolean values
+//steven guo 
+//10/19/20
 FILE* logFile;//log file
 const key_t PCB_TABLE_KEY = 110594;//key for shared PCB Table
 const key_t CLOCK_KEY = 110197;//key for shared simulated clock 

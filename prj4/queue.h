@@ -2,7 +2,8 @@
 #define QUEUE_H
 
 #include <stdlib.h>
-
+//steven guo 
+//10/19/20
 typedef struct 
 {
     unsigned int head;

@@ -12,7 +12,8 @@
 
 #include "oss.h"
 #include "queue.h"
-
+//steven guo 
+//10/19/20
 static void time_out();
 void cleanup();
 void remove_shm();
