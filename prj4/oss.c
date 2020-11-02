@@ -255,7 +255,7 @@ void oss(int maxProcesses)
     int burst; // actual time used by the process
     int response; // response from process. will be percentage of quantum used
 
-    simtime_t maxTimeBetweenNewProcesses = { .s = 0, .ns = 500000000 };// rand() %
+    simtime_t maxTimeBetweenNewProcesses = { .s = 0, .ns = 500000000 };
     simtime_t nextProcess; // holds the time we should spawn the next process
     int terminated = 0; // counter of terminated processes
     int generated = 0; // counter of generated processes
