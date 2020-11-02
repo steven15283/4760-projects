@@ -15,11 +15,14 @@ simtime_t* attach_sim_clock();
 void get_clock_and_table(int n);
 int get_outcome();
 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
+int main(int argc, char* argv[]) 
+{
+    if (argc < 2) 
+    {
         fprintf(stderr, "Usage: ./user pid msqid quantum\n");
         exit(EXIT_SUCCESS);
     }
+
     int pid;
     mymsg_t msg;
     int quantum;
@@ -40,7 +43,8 @@ int main(int argc, char* argv[]) {
 
     // while loop to wait for messages from oss until we terminate.
     while (outcome != 1) {  // outcome == 1 means terminate
-        if ((msgrcv(msqid, &msg, sizeof(msg.mvalue), (pid + 1), 0)) == -1) {
+        if ((msgrcv(msqid, &msg, sizeof(msg.mvalue), (pid + 1), 0)) == -1) 
+        {
             perror("./user: Error: msgrcv ");
             exit(EXIT_FAILURE);
         }
@@ -56,15 +60,15 @@ int main(int argc, char* argv[]) {
                 msg.mvalue = 100;
                 break;
             case 1:  // term
-                msg.mvalue = (rand() % 99) + 1;
+                msg.mvalue = (rand() % 99) + 1; //random number 1-99
                 break;
             case 2:  // block
                 msg.mvalue = ((rand() % 99) + 1) * -1;
                 timeBlocked.s = simClock->s;
                 timeBlocked.ns = simClock->ns;
                 burst = msg.mvalue * (quantum / 100) * pow(2.0, (double)table[pid].priority);
-                event.s = (rand() % 4) + 1;//generating r [0,5]
-                event.ns = (rand() % 1000) * 1000000; //generating s [0, 999]. * 1000000 to convert to ns
+                event.s = (rand() % 2) + 1;//random number from 0-3
+                event.ns = (rand() % 1000 + 1) * 1000000; //random number from 0-1000 and then converted to nanoseconds
                 // add to wait time total
                 table[pid].waitTime = add_sim_times(table[pid].waitTime, event);
                 event = add_sim_times(event, timeBlocked);//event time = current time + r.s
