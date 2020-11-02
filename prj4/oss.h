@@ -16,14 +16,16 @@ int msqid;//id for message queue
 
 //simulated time value
 //used for the simulated clock
-typedef struct {
+typedef struct 
+{
     unsigned int s;
     unsigned int ns;
 } simtime_t;
 
 //pseudo-process control block
 //used for PCB Table
-typedef struct {
+typedef struct 
+{
     //simulated process id, range is [0,18]
     int pid;
     //Process priority
@@ -45,34 +47,42 @@ typedef struct {
 } pcb_t;
 
 //msg struct for msgqueue
-typedef struct {
+typedef struct 
+{
     long mtype;
     int mvalue;
 } mymsg_t;
 
 //increment given simulated time by given increment
-void increment_sim_time(simtime_t* simTime, int increment) {
+void increment_sim_time(simtime_t* simTime, int increment) 
+{
     simTime->ns += increment;
-    if (simTime->ns >= 1000000000) {
+    if (simTime->ns >= 1000000000) 
+    
+    {
         simTime->ns -= 1000000000;
         simTime->s += 1;
     }
 }
 // returns a - b
-simtime_t subtract_sim_times(simtime_t a, simtime_t b) {
+simtime_t subtract_sim_times(simtime_t a, simtime_t b) 
+{
     simtime_t diff = { .s = a.s - b.s,
                       .ns = a.ns - b.ns };
-    if (diff.ns < 0) {
+    if (diff.ns < 0) 
+    {
         diff.ns += 1000000000;
         diff.s -= 1;
     }
     return diff;
 }
 //returns a + b
-simtime_t add_sim_times(simtime_t a, simtime_t b) {
+simtime_t add_sim_times(simtime_t a, simtime_t b) 
+{
     simtime_t sum = { .s = a.s + b.s,
                       .ns = a.ns + b.ns };
-    if (sum.ns >= 1000000000) {
+    if (sum.ns >= 1000000000) 
+    {
         sum.ns -= 1000000000;
         sum.s += 1;
     }
@@ -80,12 +90,14 @@ simtime_t add_sim_times(simtime_t a, simtime_t b) {
 }
 
 //returns simtime / divisor
-simtime_t divide_sim_time(simtime_t simTime, int divisor) {
+simtime_t divide_sim_time(simtime_t simTime, int divisor) 
+{
     simtime_t quotient = { .s = simTime.s / divisor, .ns = simTime.ns / divisor };
     return quotient;
 }
 
-pcb_t create_pcb(int priority, int pid, simtime_t currentTime) {
+pcb_t create_pcb(int priority, int pid, simtime_t currentTime) 
+{
     pcb_t pcb = { .pid = pid,
                   .priority = priority,
                   .isReady = TRUE,
