@@ -419,12 +419,12 @@ void oss(int maxProcesses)
             {
                 increment_sim_time(simClock, burst);
                 fprintf(logFile, "OSS:Queue1: Full Slice PID: %3d Used: %9dns\n", simPid, burst);
-                fprintf(logFile, "OSS:Queue1: PID: %3d goes into  Queue 2\n", simPid);
+                fprintf(logFile, "OSS:Queue1: PID: %3d goes into  Expired Queue 1\n", simPid);
                 // updat pcb
                 increment_sim_time(&table[simPid].cpuTime, burst);
                 table[simPid].sysTime = subtract_sim_times((*simClock), table[simPid].arrivalTime);
-                table[simPid].priority = 2;
-                enqueue(queue2, simPid);
+                table[simPid].priority = 1;
+                enqueue(exQueue1, simPid);
             }
             else if (response < 0) 
             {// Blocked
