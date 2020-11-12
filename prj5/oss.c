@@ -87,15 +87,18 @@ void oss(int maxConcurrent)
     print_shared_vector(logFile, "Shared Resources", resourceDescriptor->sharedResourceVector, MAX_RESOURCES);
     print_resource_descriptor(logFile, (*resourceDescriptor), MAX_RESOURCES, maxConcurrent);
     //infinite loop that will only terminate using SIGALRM
-    while (1) {
+    while (1) 
+    {
         //If there are less active processes than the maximum concurrent processes AND
         //it is time to schedule a new process (nextProcess <= simClock)...
-        if (activeProcesses < maxConcurrent && less_or_equal_sim_times(nextProcess, (*simClock)) == 1) {
+        if (activeProcesses < maxConcurrent && less_or_equal_sim_times(nextProcess, (*simClock)) == 1) 
+        {
             //...spawn a process
             int simPid;
             int pid;
             simPid = get_available_pid_index(pids, maxConcurrent);
-            if (simPid < 0) {  //Error
+            if (simPid < 0) 
+            {  //Error
                 fprintf(logFile, "%d.%09ds ./oss: Error: No available simPids\n", simClock->s, simClock->ns);
                 fprintf(stderr, "./oss: Error: No available simPids\n");
                 cleanup();
@@ -109,14 +112,16 @@ void oss(int maxConcurrent)
             //schedule next process spawn time
             nextProcess = get_next_process_time((simtime_t) { 0, 500000000 }, (*simClock));
             //Verbose logging
-            if (verbose == TRUE && lines < 100000) {
+            if (verbose == TRUE && lines < 100000) 
+            {
                 fprintf(logFile, "%d.%09ds ./oss: Spawned new process p%d\n", simClock->s, simClock->ns, simPid);
                 fprintf(logFile, "%d.%09ds ./oss: Next process scheduled for %d.%09ds\n", simClock->s, simClock->ns, nextProcess.s, nextProcess.ns);
                 lines += 2;
             }
         }
         //If there are any messages for oss in the queue
-        else if ((msgrcv(msqid, &msg, sizeof(msg_t), 1, IPC_NOWAIT)) > 0) {
+        else if ((msgrcv(msqid, &msg, sizeof(msg_t), 1, IPC_NOWAIT)) > 0) 
+        {
             //printf("rcv\n.mtype = %ld  .rid = %d  .action = %d  .pid = %d  .sender = %d\n\n", msg.mtype, msg.rid, msg.action, msg.pid, msg.sender);
             handle_msg(msg, resourceDescriptor, simClock, pids, &activeProcesses, &lines);
         }
@@ -124,16 +129,19 @@ void oss(int maxConcurrent)
         //lines filled with resource descriptors
         //calulation is because printing resource descriptor has large variation in the amount of lines
         //it writes so this keeps it consistent
-        if ((lines - (9 + 2 * maxConcurrent) * prints) / 20 >= prints && lines < 100000) {
+        if ((lines - (9 + 2 * maxConcurrent) * prints) / 20 >= prints && lines < 100000) 
+        {
             prints++;
             lines += 9 + 2 * maxConcurrent;
             print_resource_descriptor(logFile, (*resourceDescriptor), MAX_RESOURCES, maxConcurrent);
         }
         //Every simulated second check for and handle deadlock
-        if (simClock->ns == 0) {
+        if (simClock->ns == 0) 
+        {
             deadlocked = deadlock(resourceDescriptor, maxConcurrent, simClock, pids, &activeProcesses, &lines);
             //If a deadlock occurred print the system state
-            if (deadlocked == TRUE && lines < 100000) {
+            if (deadlocked == TRUE && lines < 100000) 
+            {
                 prints++;
                 lines += 9 + 2 * maxConcurrent;
                 print_resource_descriptor(logFile, (*resourceDescriptor), MAX_RESOURCES, maxConcurrent);
@@ -161,7 +169,8 @@ void handle_args(int argc, char* argv[], int* n)
 {
     int opt;
     char* logName = "log.txt";
-    if (argc < 2) {
+    if (argc < 2) 
+    {
         printf("No arguments given\n");
         printf("Using default values\n");
     }
