@@ -13,8 +13,6 @@
 
 static void time_out();
 void oss(int maxConcurrent);
-void handle_args(int argc, char* argv[], int* n);
-FILE* open_file(char* fname, char* opts, char* error);
 void cleanup();
 resource_descriptor_t* get_shared_resource_descriptor();
 simtime_t* get_shared_simtime();
@@ -31,7 +29,12 @@ void terminate_and_release(resource_descriptor_t* resourceDescriptor, int simPid
 int main(int argc, char* argv[]) 
 {
     int n = 18;
-    handle_args(argc, argv, &n);
+    logFile = fopen("Log.txt", "w");
+    if (logFile == NULL)
+    {  // error opening file
+        perror("error opening file");
+        cleanup();
+    }
     srand(time(0));
     signal(SIGALRM, time_out);
     alarm(2);
@@ -135,11 +138,11 @@ void oss(int maxConcurrent)
             lines += 9 + 2 * maxConcurrent;
             print_resource_descriptor(logFile, (*resourceDescriptor), MAX_RESOURCES, maxConcurrent);
         }
-        //Every simulated second check for and handle deadlock
+        //check for deadlock and handle deadlock every second
         if (simClock->ns == 0) 
         {
             deadlocked = deadlock(resourceDescriptor, maxConcurrent, simClock, pids, &activeProcesses, &lines);
-            //If a deadlock occurred print the system state
+            //if a deadlock occurred print the system state
             if (deadlocked == TRUE && lines < 100000) 
             {
                 prints++;
@@ -162,81 +165,6 @@ static void time_out()
     fprintf(stderr, "Timeout\n");
     cleanup();
     exit(EXIT_SUCCESS);
-}
-
-//Handle command line args using get opt
-void handle_args(int argc, char* argv[], int* n) 
-{
-    int opt;
-    char* logName = "log.txt";
-    if (argc < 2) 
-    {
-        printf("No arguments given\n");
-        printf("Using default values\n");
-    }
-    while ((opt = getopt(argc, argv, "hn:o:v")) != -1) 
-    {
-        switch (opt) 
-        {
-        case 'h':
-            printf("This program takes the following possible arguments\n");
-            printf("\n");
-            printf("  -h           : to display this help message\n");
-            printf("  -n x         : x = maximum concurrent child processes\n");
-            printf("  -o filename  : to specify log file\n");
-            printf("  -v           : to have verbose printing\n");
-            printf("\n");
-            printf("Defaults:\n");
-            printf("  Log File: log.txt\n");
-            printf("         n: 18\n");
-            printf("  Non-verbose printing\n");
-            exit(EXIT_SUCCESS);
-        case 'n':
-            *n = atoi(optarg);
-            break;
-        case 'o':
-            logName = optarg;
-            break;
-        case 'v':
-            verbose = TRUE;
-            break;
-        default:
-            printf("No arguments given\n");
-            printf("Using default values\n");
-            break;
-        }
-    }
-    if (*n > 18) 
-    {
-        printf("n must be <= 18\n");
-        exit(EXIT_SUCCESS);
-    }
-    else if (*n <= 0) {
-        printf("n must be >= 1\n");
-        exit(EXIT_SUCCESS);
-    }
-    printf("Log File: %s\n", logName);
-    printf("       n: %d\n", *n);
-    if (verbose)
-        printf("Verbose Printing\n");
-    else
-        printf("Non-Verbose Printing\n");
-    // Open log file
-    logFile = open_file(logName, "w", "./oss: Error: ");
-    fprintf(logFile, "Begin OS Simulation\n");
-    return;
-}
-
-
-/*fopen with simple error check*/
-FILE* open_file(char* fname, char* opts, char* error) 
-{
-    FILE* fp = fopen(fname, opts);
-    if (fp == NULL) {  // error opening file
-        perror(error);
-        cleanup();
-    }
-    return fp;
 }
 
 //clean up for abnormal termination
@@ -326,7 +254,6 @@ int get_available_pid_index(int* pids, int size)
 }
 
 //spawn a process with the arg and increment running process counter
-//essentially just fork() and execl()
 int spawn(char arg1[], char arg2[], int* active) 
 {
     int pid = fork();
