@@ -1,5 +1,6 @@
 #ifndef OSS_H
 #define OSS_H
+
 #define TRUE 1
 #define FALSE 0
 #include <stdio.h>
@@ -21,8 +22,8 @@ const int request = 0;//resource request
 const int release = 1;//resource release
 const int terminate = 2;
 //sent from oss
-const int granted = 3;//granted the resource
-const int denied = 4;//waiting for release 
+const int granted = 3;//resource granted
+const int denied = 4;//wait for release 
 
 typedef struct 
 {

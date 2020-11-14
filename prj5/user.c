@@ -17,7 +17,8 @@ void wait_for_resource(int pid);
 
 int main(int argc, char* argv[]) 
 {
-    if (argc < 2) {
+    if (argc < 2) 
+    {
         perror("Usage: ./user msqid simPid\n");
         exit(EXIT_SUCCESS);
     }
@@ -78,7 +79,8 @@ int main(int argc, char* argv[])
                 resourceCounter++;
                 heldResources[rid]++;
             }
-            else {
+            else 
+            {
                 fprintf(stderr, "./user: Error: Unknown Response: %d\n", response);
                 EXIT_FAILURE;
             }
@@ -187,7 +189,8 @@ void send_terminate(int pid, int simPid)
     return;
 }
 //just wait to receive a message
-void wait_for_resource(int pid) {
+void wait_for_resource(int pid) 
+{
     msg_t msg;
     if ((msgrcv(msqid, &msg, sizeof(msg_t), pid, 0)) == -1) 
     {

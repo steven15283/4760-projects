@@ -28,13 +28,39 @@ void terminate_and_release(resource_descriptor_t* resourceDescriptor, int simPid
 
 int main(int argc, char* argv[]) 
 {
-    int n = 18;
+    int opt;
+    int n = 18;//max number of user processes
+    while ((opt = getopt(argc, argv, "hv")) != -1) 
+    {
+        switch (opt) {
+        case 'h':
+            printf("This program takes the following possible arguments\n");
+            printf("\n");
+            printf("  -h           : to display this help message\n");
+            printf("  -v           : to have verbose printing\n");
+            printf("\n");
+            exit(EXIT_SUCCESS);
+        case 'v':
+            verbose = TRUE;// set printing to verbose printing
+            break;
+        default:
+            printf("No arguments given\n");
+            printf("Using default values\n");
+            break;
+        }
+    }
+    if (verbose)
+        printf("Verbose Printing\n");
+    else
+        printf("Non-Verbose Printing\n");
+    // Open log file
     logFile = fopen("Log.txt", "w");
     if (logFile == NULL)
     {  // error opening file
         perror("error opening file");
         cleanup();
     }
+    fprintf(logFile, "Begin OS Simulation\n");
     srand(time(0));
     signal(SIGALRM, time_out);
     alarm(2);
@@ -42,7 +68,6 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-/**********************************  OSS  ****************************************/
 void oss(int maxConcurrent) 
 {
     //Shared Memory Structures
@@ -83,7 +108,10 @@ void oss(int maxConcurrent)
     //init pids array
     pids = (int*)malloc(sizeof(int) * maxConcurrent);
     for (i = 0; i < maxConcurrent; i++)
+    {
         pids[i] = -1;
+    }
+        
     /*Begin Simulation and Resource Management*/
     prints++;
     lines += 9 + 2 * maxConcurrent;
@@ -96,7 +124,7 @@ void oss(int maxConcurrent)
         //it is time to schedule a new process (nextProcess <= simClock)...
         if (activeProcesses < maxConcurrent && less_or_equal_sim_times(nextProcess, (*simClock)) == 1) 
         {
-            //...spawn a process
+            //spawn process
             int simPid;
             int pid;
             simPid = get_available_pid_index(pids, maxConcurrent);
@@ -154,10 +182,9 @@ void oss(int maxConcurrent)
         // Increment the simulated clock
         increment_sim_time(simClock, clockInc);
     }  //END WHILE(1)
-    //never get here
     return;
 }
-/********************************  END OSS  **************************************/
+
 
 //SIGALRM handler
 static void time_out() 
@@ -179,9 +206,9 @@ void cleanup()
 }
 
 //Return a pointer to a resource descriptor in shared memory
-resource_descriptor_t* get_shared_resource_descriptor() 
+resource_descriptor_t *get_shared_resource_descriptor() 
 {
-    resource_descriptor_t* resourceDescriptor;
+    resource_descriptor_t *resourceDescriptor;
     descriptorID = shmget(DESCRIPTOR_KEY, sizeof(resource_descriptor_t), IPC_CREAT | 0777);
     if (descriptorID < 0) 
     {
@@ -290,7 +317,8 @@ void send_msg(int dest, int action)
 }
 
 //Handle a message in the queue (request, release, terminate)
-void handle_msg(msg_t msg, resource_descriptor_t* resourceDescriptor, simtime_t* simClock, int* pids, int* active, int* lines) {
+void handle_msg(msg_t msg, resource_descriptor_t* resourceDescriptor, simtime_t* simClock, int* pids, int* active, int* lines) 
+{
     /*REQUEST*/
     if (msg.action == request) 
     {
@@ -423,7 +451,8 @@ void handle_msg(msg_t msg, resource_descriptor_t* resourceDescriptor, simtime_t*
 
 //Deadlock detection and resolution
 //Deadlock detection algorithm takes heavy inspiration from example in the notes
-int deadlock(resource_descriptor_t* resourceDescriptor, int processes, simtime_t* simClock, int* pids, int* active, int* lines) {
+int deadlock(resource_descriptor_t* resourceDescriptor, int processes, simtime_t* simClock, int* pids, int* active, int* lines) 
+{
     int work[MAX_RESOURCES];
     int finish[processes];
     int deadlocked[processes];
@@ -457,7 +486,8 @@ int deadlock(resource_descriptor_t* resourceDescriptor, int processes, simtime_t
     }
     for (p = 0; p < processes; p++) 
     {
-        if (finish[p] == FALSE) {
+        if (finish[p] == FALSE) 
+        {
             deadlocked[deadlockCount++] = p;
         }
     }
