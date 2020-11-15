@@ -32,7 +32,8 @@ int main(int argc, char* argv[])
     int n = 18;//max number of user processes
     while ((opt = getopt(argc, argv, "hv")) != -1) 
     {
-        switch (opt) {
+        switch (opt) 
+        {
         case 'h':
             printf("This program takes the following possible arguments\n");
             printf("\n");
@@ -44,7 +45,6 @@ int main(int argc, char* argv[])
             verbose = TRUE;// set printing to verbose printing
             break;
         default:
-            printf("No arguments given\n");
             printf("Using default values\n");
             break;
         }
@@ -70,10 +70,10 @@ int main(int argc, char* argv[])
 
 void oss(int maxConcurrent) 
 {
-    //Shared Memory Structures
-    simtime_t* simClock;
-    resource_descriptor_t* resourceDescriptor;
-    // Message Queue buffer
+    //shared memory structures
+    simtime_t* simClock;//clock
+    resource_descriptor_t* resourceDescriptor;// resource descriptor
+    // message queue buffer
     msg_t msg;
     //Array of pids where the index of the pid is that pid's sim pid
     int* pids;
@@ -85,43 +85,43 @@ void oss(int maxConcurrent)
     //counter of active processes spawned by oss that are in the system
     int activeProcesses = 0;
     //Clock Increment
-    int clockInc = 1000000;  // 1 ms = 1,000,000 ns
+    int clockInc = 1000000;  // 1 ms
     //loop iterator
     int i;
-    //Counter of lines written to the log file
+    //counter of lines written to the log file
     int lines = 0;
     //counter of resource descriptor prints
     int prints = 0;
     //whether or not the system detected deadlock;
     int deadlocked = FALSE;
 
-    /*          Setup          */
-    //Shared Memory
+    
+    //shared Memory
     simClock = get_shared_simtime();
     simClock->s = 0;
     simClock->ns = 0;
     resourceDescriptor = get_shared_resource_descriptor();
     init_resource_descriptor(resourceDescriptor);
-    //Message Queue
+    //message queue
     create_msqueue();
     sprintf(msqidArg, "%d", msqid);  //write msqid to string for exec arg
     //init pids array
     pids = (int*)malloc(sizeof(int) * maxConcurrent);
+    //sets pids to inactive
     for (i = 0; i < maxConcurrent; i++)
     {
         pids[i] = -1;
     }
         
-    /*Begin Simulation and Resource Management*/
+    /*begin simulation and resource management*/
     prints++;
     lines += 9 + 2 * maxConcurrent;
     print_shared_vector(logFile, "Shared Resources", resourceDescriptor->sharedResourceVector, MAX_RESOURCES);
     print_resource_descriptor(logFile, (*resourceDescriptor), MAX_RESOURCES, maxConcurrent);
-    //infinite loop that will only terminate using SIGALRM
+    //infinite loop that will only terminate with SIGALRM
     while (1) 
     {
-        //If there are less active processes than the maximum concurrent processes AND
-        //it is time to schedule a new process (nextProcess <= simClock)...
+        //If there are less active processes than the maximum concurrent processes and it is time to schedule a new process
         if (activeProcesses < maxConcurrent && less_or_equal_sim_times(nextProcess, (*simClock)) == 1) 
         {
             //spawn process
@@ -142,7 +142,7 @@ void oss(int maxConcurrent)
             pids[simPid] = pid;
             //schedule next process spawn time
             nextProcess = get_next_process_time((simtime_t) { 0, 500000000 }, (*simClock));
-            //Verbose logging
+            //check for verbose logging and if the lines accumulate to over 100000 lines in the log
             if (verbose == TRUE && lines < 100000) 
             {
                 fprintf(logFile, "%d.%09ds ./oss: Spawned new process p%d\n", simClock->s, simClock->ns, simPid);
@@ -150,14 +150,13 @@ void oss(int maxConcurrent)
                 lines += 2;
             }
         }
-        //If there are any messages for oss in the queue
+        //check if theres any messages for oss in the queue
         else if ((msgrcv(msqid, &msg, sizeof(msg_t), 1, IPC_NOWAIT)) > 0) 
         {
             //printf("rcv\n.mtype = %ld  .rid = %d  .action = %d  .pid = %d  .sender = %d\n\n", msg.mtype, msg.rid, msg.action, msg.pid, msg.sender);
             handle_msg(msg, resourceDescriptor, simClock, pids, &activeProcesses, &lines);
         }
-        //weird calculation to print the state of the system every 20 printed lines but not including
-        //lines filled with resource descriptors
+        //calculation to print the state of the system every 20 printed lines but not including lines filled with resource descriptors
         //calulation is because printing resource descriptor has large variation in the amount of lines
         //it writes so this keeps it consistent
         if ((lines - (9 + 2 * maxConcurrent) * prints) / 20 >= prints && lines < 100000) 
@@ -170,7 +169,7 @@ void oss(int maxConcurrent)
         if (simClock->ns == 0) 
         {
             deadlocked = deadlock(resourceDescriptor, maxConcurrent, simClock, pids, &activeProcesses, &lines);
-            //if a deadlock occurred print the system state
+            //if a deadlock occurred print the state of the system
             if (deadlocked == TRUE && lines < 100000) 
             {
                 prints++;
@@ -179,9 +178,9 @@ void oss(int maxConcurrent)
             }
         }
 
-        // Increment the simulated clock
+        // increment the simulated clock
         increment_sim_time(simClock, clockInc);
-    }  //END WHILE(1)
+    }  
     return;
 }
 
@@ -205,7 +204,7 @@ void cleanup()
     exit(EXIT_SUCCESS);
 }
 
-//Return a pointer to a resource descriptor in shared memory
+//return a pointer to a resource descriptor in shared memory
 resource_descriptor_t *get_shared_resource_descriptor() 
 {
     resource_descriptor_t *resourceDescriptor;
@@ -296,7 +295,7 @@ int spawn(char arg1[], char arg2[], int* active)
     return pid;
 }
 
-//Send a message to the process with the given pid (dest)
+//send a message to the process with the given pid (dest)
 void send_msg(int dest, int action) 
 {
     //only two important parts of an oss to child message...
@@ -316,28 +315,28 @@ void send_msg(int dest, int action)
     return;
 }
 
-//Handle a message in the queue (request, release, terminate)
+//handle a message in the queue (request, release, terminate)
 void handle_msg(msg_t msg, resource_descriptor_t* resourceDescriptor, simtime_t* simClock, int* pids, int* active, int* lines) 
 {
-    /*REQUEST*/
+    //request
     if (msg.action == request) 
     {
-        //Verbose logging
+        //verbose logging
         if (verbose == TRUE && (*lines) < 100000) 
         {
             fprintf(logFile, "%d.%09ds ./oss: p%d requests r%d\n", simClock->s, simClock->ns, msg.pid, msg.rid);
             (*lines)++;
         }
-        /*REQUEST FOR SHARED RESOURCE*/
+        //request for shared resource
         if (resourceDescriptor->sharedResourceVector[msg.rid] == 1) 
         {
-            //if not holding too many hsared resources already
+            //if not holding too many shared resources already
             if (resourceDescriptor->allocationMatrix[msg.pid][msg.rid] < 5) 
             {
                 resourceDescriptor->allocationMatrix[msg.pid][msg.rid] += 1;
-                //Tell requester that request was granted
+                //tell requester that request was granted
                 send_msg(msg.sender, granted);
-                //Verbose logging
+                //verbose logging
                 if (verbose == TRUE && (*lines) < 100000) 
                 {
                     fprintf(logFile, "%d.%09ds ./oss: p%d granted r%d\n", simClock->s, simClock->ns, msg.pid, msg.rid);
@@ -349,7 +348,7 @@ void handle_msg(msg_t msg, resource_descriptor_t* resourceDescriptor, simtime_t*
                 resourceDescriptor->requestMatrix[msg.pid][msg.rid] += 1;
                 //Tell requester that request was denied
                 send_msg(msg.sender, denied);
-                //Verbose logging
+                //verbose logging
                 if (verbose == TRUE && (*lines) < 100000) 
                 {
                     fprintf(logFile, "%d.%09ds ./oss: p%d denied r%d\n", simClock->s, simClock->ns, msg.pid, msg.rid);
@@ -359,12 +358,12 @@ void handle_msg(msg_t msg, resource_descriptor_t* resourceDescriptor, simtime_t*
         }
         else if (resourceDescriptor->allocationVector[msg.rid] > 0) 
         {
-            /*Request for non-shareable resource and there is enough available*/
+            //request for non-shareable resource and there is some available
             resourceDescriptor->allocationVector[msg.rid] -= 1;
             resourceDescriptor->allocationMatrix[msg.pid][msg.rid] += 1;
-            //Tell requester that request was granted
+            //tell requester that request was granted
             send_msg(msg.sender, granted);
-            //Verbose logging
+            //verbose logging
             if (verbose == TRUE && (*lines) < 100000) 
             {
                 fprintf(logFile, "%d.%09ds ./oss: p%d granted r%d\n", simClock->s, simClock->ns, msg.pid, msg.rid);
@@ -373,11 +372,11 @@ void handle_msg(msg_t msg, resource_descriptor_t* resourceDescriptor, simtime_t*
         }
         else 
         {
-            /*Request for non-shareable resource and there is NOT enough available*/
+            //request for non-shareable resource and there is not enough thats available
             resourceDescriptor->requestMatrix[msg.pid][msg.rid] += 1;
-            //Tell requester that request was denied
+            //tell requester that request was denied
             send_msg(msg.sender, denied);
-            //Verbose logging
+            //verbose logging
             if (verbose == TRUE && (*lines) < 100000) 
             {
                 fprintf(logFile, "%d.%09ds ./oss: p%d denied r%d\n", simClock->s, simClock->ns, msg.pid, msg.rid);
@@ -385,19 +384,20 @@ void handle_msg(msg_t msg, resource_descriptor_t* resourceDescriptor, simtime_t*
             }
         }
     }
+    //release
     else if (msg.action == release) 
     {
         if (resourceDescriptor->allocationMatrix[msg.pid][msg.rid] > 0) 
         {
-            //If not a shared resource
+            //if not a shared resource
             if (resourceDescriptor->sharedResourceVector[msg.rid] == 0) 
             {
                 resourceDescriptor->allocationVector[msg.rid] += 1;
             }
             resourceDescriptor->allocationMatrix[msg.pid][msg.rid] -= 1;
-            //Tell releaser that its release was granted
+            //tell releaser that its release was granted
             send_msg(msg.sender, granted);
-            //Verbose logging
+            //verbose logging
             if (verbose == TRUE && (*lines) < 100000) 
             {
                 fprintf(logFile, "%d.%09ds ./oss: p%d released r%d\n", simClock->s, simClock->ns, msg.pid, msg.rid);
@@ -410,6 +410,7 @@ void handle_msg(msg_t msg, resource_descriptor_t* resourceDescriptor, simtime_t*
             send_msg(msg.sender, denied);
         }
     }
+    //terminate
     else if (msg.action == terminate) 
     {
         /*PROCESS WANTS TO TERMINATE*/
@@ -449,8 +450,7 @@ void handle_msg(msg_t msg, resource_descriptor_t* resourceDescriptor, simtime_t*
     return;
 }
 
-//Deadlock detection and resolution
-//Deadlock detection algorithm takes heavy inspiration from example in the notes
+//deadlock detection algorithm and resolution
 int deadlock(resource_descriptor_t* resourceDescriptor, int processes, simtime_t* simClock, int* pids, int* active, int* lines) 
 {
     int work[MAX_RESOURCES];
@@ -467,7 +467,7 @@ int deadlock(resource_descriptor_t* resourceDescriptor, int processes, simtime_t
     {
         finish[i] = FALSE;
     }
-    //Detection
+    //detection
     for (p = 0; p < processes; p++) 
     {
         if (finish[p] == TRUE) 
@@ -491,7 +491,7 @@ int deadlock(resource_descriptor_t* resourceDescriptor, int processes, simtime_t
             deadlocked[deadlockCount++] = p;
         }
     }
-    //Resolution
+    //resolution
     if (deadlockCount > 0) 
     {
         if ((*lines) < 100000) 
@@ -501,7 +501,7 @@ int deadlock(resource_descriptor_t* resourceDescriptor, int processes, simtime_t
         }
         for (i = 0; i < deadlockCount; i++) 
         {
-            //Verbose logging
+            //verbose logging
             if ((*lines) < 100000) 
             {
                 fprintf(logFile, "\t./oss: p%d deadlocked\n", deadlocked[i]);
