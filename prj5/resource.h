@@ -1,3 +1,5 @@
+//steven guo 
+//11/05/20
 #ifndef RESOURCE_H
 #define RESOURCE_H
 
@@ -9,20 +11,20 @@
 
 typedef struct 
 {
-    // Matrix of requested resources and the requesting processes
+    //requested resources and the requesting processes matrixes
     int requestMatrix[MAX_PROCESSES][MAX_RESOURCES];
-    // Matrix of allocated resources and the processes holding them
+    // matrix of allocated resources and the processes holding them
     int allocationMatrix[MAX_PROCESSES][MAX_RESOURCES];
-    // Vector of total existing resources
+    // vector of total existing resources
     int resourceVector[MAX_RESOURCES];
-    // Vector of resources not being held
+    // vector of resources not being held
     int allocationVector[MAX_RESOURCES];
-    // Vector to indicate if a resource is shared
+    // vector to indicate if a resource is shared
     int sharedResourceVector[MAX_RESOURCES];
 } resource_descriptor_t;
 
 /* set given resource descriptor matrices values to 0
- * resource vector values are random between 1 and 10 inclusively
+ * resource vector values are random between 1 and 10 
  * allocation vector values are set to equal the resource vector as no
  * resources will be allocated initially */
 void init_resource_descriptor(resource_descriptor_t* descriptor) 
@@ -105,7 +107,7 @@ void print_matrix(FILE* out, char* title, int matrix[MAX_PROCESSES][MAX_RESOURCE
     }
     return;
 }
-//Print resource descriptor to given filestream
+//print resource descriptor to given filestream
 void print_resource_descriptor(FILE* out, resource_descriptor_t descriptor, int resources, int processes) 
 {
     print_vector(out, "Resource Vector", descriptor.resourceVector, resources);

@@ -1,20 +1,23 @@
+//steven guo 
+//11/05/20
 #ifndef OSS_H
 #define OSS_H
 
 #define TRUE 1
 #define FALSE 0
 #include <stdio.h>
-//Shared memory keys and IDs
+#include <sys/types.h>
+//shared memory keys and IDs
 int descriptorID;
-const int DESCRIPTOR_KEY = 110594;
+const key_t DESCRIPTOR_KEY = 110594;
 int simClockID;
-const int SIM_CLOCK_KEY = 110197;
-//Mesage Queue key and ID
+const key_t SIM_CLOCK_KEY = 110197;
+//mesage Queue key and ID
 int msqid;
-const int MSG_Q_KEY = 052455;
-//Log file pointer and verbose printing option
+const key_t MSG_Q_KEY = 052455;
+//log file pointer and verbose printing option
 FILE* logFile;
-int verbose = FALSE;
+int verbose = FALSE;//default verbose set to false
 
 //possible values for msg action
 //sent from child
@@ -28,8 +31,8 @@ const int denied = 4;//wait for release
 typedef struct 
 {
 	long mtype;
-	int rid;     //resource id [0-19]
-	int action;  //0 = request, 1 = release
+	int rid;//resource id [0-19]
+	int action;//0 = request, 1 = release
 	int pid;
 	int sender;//process id of the sender
 } msg_t;

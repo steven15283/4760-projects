@@ -6,11 +6,11 @@ USER = user
 
 all: oss user
 
-oss: main.o
-	$(CC) $(CFLAGS) -o $(OSS) main.o
+oss: oss.o
+	$(CC) $(CFLAGS) -o $(OSS) oss.o
 
-main.o: main.c oss.h resource.h
-	$(CC) $(CFLAGS) -c main.c
+oss.o: oss.c oss.h resource.h
+	$(CC) $(CFLAGS) -c oss.c
 
 user: user.o
 	$(CC) $(CFLAGS) -o $(USER) user.o
@@ -19,4 +19,4 @@ user.o: user.c oss.h resource.h
 	$(CC) $(CFLAGS) -c user.c
 
 clean:
-	rm *.o oss user
+	rm *.o oss user ossLog.txt

@@ -1,3 +1,5 @@
+//steven guo 
+//11/05/20
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,7 +56,7 @@ int main(int argc, char* argv[])
     else
         printf("Non-Verbose Printing\n");
     // Open log file
-    logFile = fopen("Log.txt", "w");
+    logFile = fopen("ossLog.txt", "w");
     if (logFile == NULL)
     {  // error opening file
         perror("error opening file");
