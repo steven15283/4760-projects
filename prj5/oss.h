@@ -23,7 +23,7 @@ int verbose = FALSE;//default verbose set to false
 //sent from child
 const int request = 0;//resource request
 const int release = 1;//resource release
-const int terminate = 2;
+const int terminate = 10;
 //sent from oss
 const int granted = 3;//resource granted
 const int denied = 4;//wait for release 
