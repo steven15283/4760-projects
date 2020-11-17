@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
     fprintf(logFile, "Begin OS Simulation\n");
     srand(time(0));
     signal(SIGALRM, time_out);
-    alarm(2);
+    alarm(10);
     oss(n);
     return 0;
 }
