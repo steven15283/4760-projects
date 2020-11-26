@@ -50,7 +50,8 @@ typedef struct
 void increment_sim_time(simtime_t *t, int inc) 
 {
   t->ns += inc;
-  if (t->ns >= 1000000000) {
+  if (t->ns >= 1000000000) 
+  {
     t->ns -= 1000000000;
     t->s += 1;
   }
