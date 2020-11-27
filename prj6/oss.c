@@ -12,6 +12,31 @@
 #include <sys/wait.h>
 #include "oss.h"
 
+FILE* logFile;
+
+int simClockID;
+const int SIM_CLOCK_KEY = 123456;
+int msqid;
+const int MSG_Q_KEY = 234567;
+
+void oss(simtime_t* simClock, int maxActive);
+void init_mem_management(int* pids, frame_t* frameTable, pagetable_t* pageTables, int maxActive);
+void handle_args(int argc, char* argv[], int* maxActive);
+static void time_out();
+void cleanup();
+FILE* open_file(char* fname, char* opts, char* error);
+simtime_t* get_shared_simtime(int key);
+void create_msqueue();
+int get_simPid(int* pids, int size);
+int spawn(char arg1[], char arg2[], int* active);
+simtime_t get_next_process_time(simtime_t max, simtime_t currentTime);
+void send_msg(int dest, enum actions action);
+int get_empty_frame_pos(frame_t* table, int frames);
+int get_lru_frame_pos(frame_t* table, int frames);
+void shift_refBytes(frame_t* table, int frames);
+void print_frame_table(frame_t* table, int frames, simtime_t now, FILE* out);
+void print_stats(simtime_t* simClock, int faults, int references, FILE* out);
+
 
 void oss(simtime_t* simClock, int maxActive)
 {
