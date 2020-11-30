@@ -57,7 +57,7 @@ void oss(simtime_t* simClock, int maxActive)
     pagetable_t* pageTables = (pagetable_t*)malloc(sizeof(pagetable_t) * maxActive);
     // initialize the array of pids and memory management structures
     init_mem_management(pids, frameTable, pageTables, maxActive);
-    // Set up the message queue
+    // set up the message queue
     create_msqueue();
 
 
