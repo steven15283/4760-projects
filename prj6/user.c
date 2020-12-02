@@ -9,7 +9,7 @@
 #include "oss.h"
 
 int msqid;
-//only two important parts of an oss to child message...
+//only two important parts of an oss to child message
 //the destination (pid of receiving process)
 //and the action sent to them (denied or granted)
 void send_msg(int dest, int pid, int address, enum actions action)

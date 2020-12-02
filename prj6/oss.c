@@ -13,18 +13,14 @@
 #include "oss.h"
 
 FILE* logFile;
-
 int simClockID;
 const int SIM_CLOCK_KEY = 123456;
 int msqid;
 const int MSG_Q_KEY = 234567;
-
 void oss(simtime_t* simClock, int maxActive);
 void init_mem_management(int* pids, frame_t* frameTable, pagetable_t* pageTables, int maxActive);
-void handle_args(int argc, char* argv[], int* maxActive);
 static void time_out();
 void cleanup();
-FILE* open_file(char* fname, char* opts, char* error);
 simtime_t* get_shared_simtime(int key);
 void create_msqueue();
 int get_simPid(int* pids, int size);
@@ -61,7 +57,7 @@ void oss(simtime_t* simClock, int maxActive)
     create_msqueue();
 
 
-    /oss
+    //oss
     fprintf(logFile, "Begin OS Simulation\n");
     lines++;
     while (1)
@@ -241,11 +237,6 @@ void oss(simtime_t* simClock, int maxActive)
     return;
 }
 
-
-
-
-
-
 //initialize the array of pids and memory management structures
 void init_mem_management(int* pids, frame_t* frameTable, pagetable_t* pageTables, int maxActive)
 {
@@ -272,61 +263,6 @@ void init_mem_management(int* pids, frame_t* frameTable, pagetable_t* pageTables
     }
 }
 
-//handle command line arguments using getopt
-void handle_args(int argc, char* argv[], int* maxActive)
-{
-    int opt;
-    char* logName = "log.txt";
-    if (argc < 2)
-    {
-        printf("No arguments given\n");
-        printf("Using default values\n");
-    }
-    while ((opt = getopt(argc, argv, "hn:o:")) != -1)
-    {
-        switch (opt)
-        {
-        case 'h':
-            printf("This program takes the following possible arguments\n");
-            printf("\n");
-            printf("  -h           : to display this help message\n");
-            printf("  -n x         : x = maximum concurrent child processes\n");
-            printf("  -o filename  : to specify log file\n");
-            printf("\n");
-            printf("Defaults:\n");
-            printf("  Log File: log.txt\n");
-            printf("         n: 18\n");
-            printf("  Non-verbose printing\n");
-            exit(EXIT_SUCCESS);
-        case 'n':
-            *maxActive = atoi(optarg);
-            break;
-        case 'o':
-            logName = optarg;
-            break;
-        default:
-            printf("No arguments given\n");
-            printf("Using default values\n");
-            break;
-        }
-    }
-    if (*maxActive > 18)
-    {
-        printf("n must be <= 18\n");
-        exit(EXIT_SUCCESS);
-    }
-    else if (*maxActive <= 0)
-    {
-        printf("n must be >= 1\n");
-        exit(EXIT_SUCCESS);
-    }
-    printf("Log File: %s\n", logName);
-    printf("       n: %d\n", *maxActive);
-    //open log file
-    logFile = open_file(logName, "w", "./oss: Error: ");
-    return;
-}
-
 //SIGALRM handler
 static void time_out()
 {
@@ -343,17 +279,6 @@ void cleanup()
     msgctl(msqid, IPC_RMID, NULL);
     kill(0, SIGTERM);
     exit(EXIT_SUCCESS);
-}
-
-//fopen with simple error check
-FILE* open_file(char* fname, char* opts, char* error)
-{
-    FILE* fp = fopen(fname, opts);
-    if (fp == NULL) {  // error opening file
-        perror(error);
-        cleanup();
-    }
-    return fp;
 }
 
 //return a pointer to simtime_t object in shared memory
@@ -522,8 +447,13 @@ int main(int argc, char* argv[])
     //two second time out
     signal(SIGALRM, time_out);
     alarm(2);
-    //handle command line arguments
-    handle_args(argc, argv, &maxActive);
+    //open log file
+    logFile = fopen("Log.txt", "w");
+    if (logFile == NULL)
+    {  // error opening file
+        perror("error opening file");
+        cleanup();
+    }
     //set up shared simulated clock
     simClock = get_shared_simtime(SIM_CLOCK_KEY);
     simClock->s = 0;
